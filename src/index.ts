@@ -2,23 +2,10 @@ import { existsSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { NextConfig } from 'next'
+import { detectEnv, type EnvStylesOptions } from './env'
 import { DEFAULT_COLORS, FALLBACK_COLOR, findSourceIcons, iconUrl, parseHex, tintIcon, toPngBase } from './tint'
 
-export interface EnvStylesOptions {
-  /** Kill switch for the whole tool. Default true. */
-  favicon?: boolean
-  /** Per-environment tint color override, e.g. { staging: '#ff00ff' }. */
-  color?: Partial<Record<string, string>>
-  /** Force the environment instead of detecting it. */
-  environment?: string
-  /** Keep pixels near these colors untinted. */
-  excludeColors?: string[]
-  /**
-   * Path to a ready-made icon, relative to the project root (absolute also allowed).
-   * Served as-is for styled envs — tinting and excludeColors are skipped entirely.
-   */
-  icon?: string
-}
+export type { EnvStylesOptions } from './env'
 
 type PhaseCtx = { defaultConfig: NextConfig }
 type NextConfigFn = (phase: string, ctx: PhaseCtx) => NextConfig | Promise<NextConfig>
@@ -30,7 +17,9 @@ export function withEnvStyles(
   nextConfig: NextConfigInput = {},
   options: EnvStylesOptions = {},
 ): NextConfigInput {
-  const env = detectEnv(options.environment)
+  const env = detectEnv(options.environment, () =>
+    process.env.NODE_ENV === 'development' ? 'development' : 'production'
+  )
   // fail loudly on a bad config value, not mid-build
   for (const value of Object.values(options.color ?? {})) {
     if (value !== undefined) parseHex(value)
@@ -44,16 +33,6 @@ export function withEnvStyles(
     const config = typeof nextConfig === 'function' ? await nextConfig(phase, ctx) : nextConfig
     return decorate(config, color, options.excludeColors ?? [], options.icon)
   }
-}
-
-function detectEnv(override?: string): string {
-  return (
-    override ??
-    process.env.ENV_STYLES_ENV ??
-    process.env.VERCEL_TARGET_ENV ??
-    process.env.VERCEL_ENV ??
-    (process.env.NODE_ENV === 'development' ? 'development' : 'production')
-  )
 }
 
 async function decorate(config: NextConfig, color: string, excludeColors: string[], customIcon?: string): Promise<NextConfig> {

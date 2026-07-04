@@ -35,8 +35,8 @@ const ICON_CANDIDATES = [
   'public/favicon.svg',
 ]
 
-export function findSourceIcons(root: string): string[] {
-  return ICON_CANDIDATES.map((rel) => path.join(root, rel)).filter((abs) => existsSync(abs))
+export function findSourceIcons(root: string, candidates = ICON_CANDIDATES): string[] {
+  return candidates.map((rel) => path.join(root, rel)).filter((abs) => existsSync(abs))
 }
 
 /** URL the found icon is conventionally served at, e.g. app/icon.png → /icon.png. */
