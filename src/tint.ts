@@ -7,7 +7,6 @@ import decodeIco from 'decode-ico'
 export const DEFAULT_COLORS: Record<string, string> = {
   development: '#3b82f6',
   preview: '#f59e0b',
-  staging: '#8b5cf6',
 }
 export const FALLBACK_COLOR = '#6b7280'
 

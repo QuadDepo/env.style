@@ -1,6 +1,6 @@
 # env.style 🎨
 
-Five browser tabs, all the same Next.js favicon — dev, preview, staging, production —
+Five browser tabs, all the same Next.js favicon — dev, preview, production —
 and you keep editing the wrong one. `env.style` wraps your Next.js config and tints your
 existing favicon per environment at build time, Vercel-style: same mark, different color.
 Production is never touched.
@@ -29,7 +29,6 @@ That's the only change needed. No layout edits, no manual favicon files.
 |--------------|--------------------|
 | development  | `#3b82f6` blue     |
 | preview      | `#f59e0b` amber    |
-| staging      | `#8b5cf6` purple   |
 | anything else| `#6b7280` gray     |
 | production   | never touched      |
 

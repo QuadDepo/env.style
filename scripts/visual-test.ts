@@ -91,7 +91,7 @@ img { width: 64px; height: 64px; object-fit: contain; background-color: #fff; ba
 </head>
 <body>
 <table>
-<thead><tr><th>brand</th><th>original</th><th>exclude white</th><th>development</th><th>preview</th><th>staging</th></tr></thead>
+<thead><tr><th>brand</th><th>original</th><th>exclude white</th><th>development</th><th>preview</th></tr></thead>
 <tbody>
 ${rows.join('\n')}
 </tbody>
