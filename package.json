@@ -1,0 +1,59 @@
+{
+  "name": "env.style",
+  "version": "0.1.0",
+  "description": "Environment-tinted favicons for Next.js — see at a glance whether a tab is dev, preview, staging, or production.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "prepublishOnly": "pnpm build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "nextjs",
+    "favicon",
+    "environment",
+    "dx",
+    "staging",
+    "preview"
+  ],
+  "dependencies": {
+    "decode-ico": "^0.4.1",
+    "sharp": "^0.35.3"
+  },
+  "peerDependencies": {
+    "next": ">=13"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "next": "^16.2.10",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9"
+  }
+}
