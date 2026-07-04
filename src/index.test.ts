@@ -39,6 +39,20 @@ async function beforeFiles(config: NextConfig) {
   return { ...grouped, beforeFiles: grouped.beforeFiles ?? [] }
 }
 
+async function squarePng(color: { r: number; g: number; b: number }): Promise<Buffer> {
+  return sharp({
+    create: { width: 32, height: 32, channels: 4, background: { ...color, alpha: 1 } },
+  })
+    .png()
+    .toBuffer()
+}
+
+async function centerPixel(png: Buffer): Promise<{ r: number; g: number; b: number; a: number }> {
+  const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true })
+  const i = (Math.floor(info.height / 2) * info.width + Math.floor(info.width / 2)) * info.channels
+  return { r: data[i], g: data[i + 1], b: data[i + 2], a: data[i + 3] }
+}
+
 describe('withEnvStyles', () => {
   it('returns the config untouched in production', () => {
     // vitest runs with NODE_ENV=test → detected env is production
@@ -129,6 +143,33 @@ describe('withEnvStyles', () => {
 
   it('throws immediately on an invalid excluded color', () => {
     expect(() => withEnvStyles({}, { ...DEV, excludeColors: ['#fff', 'white'] })).toThrow(/invalid color/)
+  })
+
+  it('serves a custom icon as-is: no tint, no excludeColors, no extra rewrite', async () => {
+    await mkdir(path.join(dir, 'app'), { recursive: true })
+    await writeFile(path.join(dir, 'app/icon.png'), await squarePng({ r: 255, g: 0, b: 0 }))
+    await writeFile(path.join(dir, 'custom.png'), await squarePng({ r: 255, g: 255, b: 255 }))
+
+    const config = await resolve(withEnvStyles({}, { ...DEV, icon: 'custom.png', excludeColors: ['#000'] }))
+    const custom = await centerPixel(await readFile(path.join(dir, 'public/__envstyle/icon.png')))
+    expect(custom).toEqual({ r: 255, g: 255, b: 255, a: 255 })
+
+    const { beforeFiles: ours } = await beforeFiles(config)
+    expect(ours.map((r: { source: string }) => r.source)).toEqual(['/favicon.ico', '/icon.png'])
+  })
+
+  it('warns and falls back to tinting when a custom icon is missing', async () => {
+    await mkdir(path.join(dir, 'app'), { recursive: true })
+    await writeFile(path.join(dir, 'app/icon.png'), await squarePng({ r: 255, g: 0, b: 0 }))
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const config = await resolve(withEnvStyles({}, { ...DEV, icon: 'missing.png' }))
+    expect(warn).toHaveBeenCalledWith('env.style: icon "missing.png" not readable — falling back to auto-discovery')
+    const center = await centerPixel(await readFile(path.join(dir, 'public/__envstyle/icon.png')))
+    expect(center.b).toBeGreaterThan(100)
+
+    const { beforeFiles: ours } = await beforeFiles(config)
+    expect(ours.map((r: { source: string }) => r.source)).toEqual(['/favicon.ico', '/icon.png'])
   })
 
   describe('env detection precedence', () => {

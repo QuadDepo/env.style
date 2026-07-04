@@ -1,7 +1,8 @@
+import { existsSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { NextConfig } from 'next'
-import { DEFAULT_COLORS, FALLBACK_COLOR, findSourceIcons, iconUrl, parseHex, tintIcon } from './tint'
+import { DEFAULT_COLORS, FALLBACK_COLOR, findSourceIcons, iconUrl, parseHex, tintIcon, toPngBase } from './tint'
 
 export interface EnvStylesOptions {
   /** Kill switch for the whole tool. Default true. */
@@ -12,6 +13,11 @@ export interface EnvStylesOptions {
   environment?: string
   /** Keep pixels near these colors untinted. */
   excludeColors?: string[]
+  /**
+   * Path to a ready-made icon, relative to the project root (absolute also allowed).
+   * Served as-is for styled envs — tinting and excludeColors are skipped entirely.
+   */
+  icon?: string
 }
 
 type PhaseCtx = { defaultConfig: NextConfig }
@@ -36,7 +42,7 @@ export function withEnvStyles(
 
   return async (phase, ctx) => {
     const config = typeof nextConfig === 'function' ? await nextConfig(phase, ctx) : nextConfig
-    return decorate(config, color, options.excludeColors ?? [])
+    return decorate(config, color, options.excludeColors ?? [], options.icon)
   }
 }
 
@@ -50,14 +56,15 @@ function detectEnv(override?: string): string {
   )
 }
 
-async function decorate(config: NextConfig, color: string, excludeColors: string[]): Promise<NextConfig> {
+async function decorate(config: NextConfig, color: string, excludeColors: string[], customIcon?: string): Promise<NextConfig> {
   const root = process.cwd()
   const icons = findSourceIcons(root)
   const sources = [...new Set(['/favicon.ico', ...icons.map(iconUrl)])]
   const destination = `/${OUT_DIR}/icon.png`
 
   try {
-    const png = await tintIcon(icons[0] ?? null, color, excludeColors)
+    const png =
+      (await customIconPng(root, customIcon)) ?? (await tintIcon(icons[0] ?? null, color, excludeColors))
     const outDir = path.join(root, 'public', OUT_DIR)
     await mkdir(outDir, { recursive: true })
     await writeFile(path.join(outDir, 'icon.png'), png)
@@ -72,6 +79,15 @@ async function decorate(config: NextConfig, color: string, excludeColors: string
     rewrites: mergeRewrites(config.rewrites, sources.map((source) => ({ source, destination }))),
     headers: mergeHeaders(config.headers, [...sources, destination]),
   }
+}
+
+/** A custom icon is the user's own env styling — serve it untouched. */
+async function customIconPng(root: string, customIcon?: string): Promise<Buffer | null> {
+  if (!customIcon) return null
+  const resolved = path.resolve(root, customIcon)
+  const png = existsSync(resolved) ? await toPngBase(resolved) : null
+  if (!png) console.warn(`env.style: icon "${customIcon}" not readable — falling back to auto-discovery`)
+  return png
 }
 
 type OurRewrite = { source: string; destination: string }

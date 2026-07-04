@@ -111,7 +111,8 @@ async function tintWithExcludeMask(base: Buffer, tint: Rgb, excludeColors: Rgb[]
   return sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer()
 }
 
-async function toPngBase(iconPath: string): Promise<Buffer | null> {
+/** Decode any supported icon (ico/png/jpg/svg) to a 64px PNG, untinted. */
+export async function toPngBase(iconPath: string): Promise<Buffer | null> {
   try {
     const { default: sharp } = await import('sharp')
     const raw = await readFile(iconPath)
