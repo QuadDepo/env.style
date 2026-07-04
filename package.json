@@ -25,6 +25,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "prepublishOnly": "pnpm build",
+    "test:visual": "node scripts/visual-test.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
