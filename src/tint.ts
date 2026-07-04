@@ -13,6 +13,10 @@ export const FALLBACK_COLOR = '#6b7280'
 
 export const SIZE = 64
 const TINT_ALPHA = 0.75
+const TOLERANCE = 48 // prototype threshold for near-identical brand colors
+const RAMP = 32 // soft edge avoids halos around antialiased pixels
+
+type Rgb = { r: number; g: number; b: number }
 
 const ICON_CANDIDATES = [
   'app/favicon.ico',
@@ -41,7 +45,7 @@ export function iconUrl(iconPath: string): string {
   return '/' + path.basename(iconPath)
 }
 
-export function parseHex(color: string): { r: number; g: number; b: number } {
+export function parseHex(color: string): Rgb {
   const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color)
   if (!m) throw new Error(`env.style: invalid color "${color}" — expected #rgb or #rrggbb`)
   let hex = m[1]
@@ -57,7 +61,7 @@ export function parseHex(color: string): { r: number; g: number; b: number } {
  * Tint the icon at iconPath toward the env color (color atop the icon's opaque
  * pixels, alpha preserved). No icon → plain colored circle.
  */
-export async function tintIcon(iconPath: string | null, color: string): Promise<Buffer> {
+export async function tintIcon(iconPath: string | null, color: string, excludeColors: string[] = []): Promise<Buffer> {
   const rgba = parseHex(color)
   const { default: sharp } = await import('sharp')
   const base = iconPath ? await toPngBase(iconPath) : null
@@ -66,12 +70,45 @@ export async function tintIcon(iconPath: string | null, color: string): Promise<
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}"><circle cx="${r}" cy="${r}" r="${r - 2}" fill="${color}"/></svg>`
     return sharp(Buffer.from(svg)).png().toBuffer()
   }
+  if (excludeColors.length > 0) return tintWithExcludeMask(base, rgba, excludeColors.map(parseHex))
   const overlay = await sharp({
     create: { width: SIZE, height: SIZE, channels: 4, background: { ...rgba, alpha: TINT_ALPHA } },
   })
     .png()
     .toBuffer()
   return sharp(base).composite([{ input: overlay, blend: 'atop' }]).png().toBuffer()
+}
+
+function redmeanDistance(a: Rgb, b: Rgb): number {
+  const rMean = (a.r + b.r) / 2
+  const dr = a.r - b.r
+  const dg = a.g - b.g
+  const db = a.b - b.b
+  return Math.sqrt((2 + rMean / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rMean) / 256) * db * db)
+}
+
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)))
+  return t * t * (3 - 2 * t)
+}
+
+async function tintWithExcludeMask(base: Buffer, tint: Rgb, excludeColors: Rgb[]): Promise<Buffer> {
+  const { default: sharp } = await import('sharp')
+  const { data, info } = await sharp(base).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  const out = Buffer.from(data)
+
+  for (let i = 0; i < out.length; i += 4) {
+    if (out[i + 3] === 0) continue
+    const original = { r: out[i], g: out[i + 1], b: out[i + 2] }
+    let distance = Infinity
+    for (const excluded of excludeColors) distance = Math.min(distance, redmeanDistance(original, excluded))
+    const alpha = TINT_ALPHA * smoothstep(TOLERANCE, TOLERANCE + RAMP, distance)
+    out[i] = Math.round(tint.r * alpha + original.r * (1 - alpha))
+    out[i + 1] = Math.round(tint.g * alpha + original.g * (1 - alpha))
+    out[i + 2] = Math.round(tint.b * alpha + original.b * (1 - alpha))
+  }
+
+  return sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer()
 }
 
 async function toPngBase(iconPath: string): Promise<Buffer | null> {

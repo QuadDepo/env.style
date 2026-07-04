@@ -56,7 +56,15 @@ async function main() {
     const sourcePath = path.join(outDir, sourceFile)
     await writeFile(sourcePath, icon)
 
-    const cells = [name, `<img src="${sourceFile}" alt="${name} original">`]
+    const excludePng = await tintIcon(sourcePath, DEFAULT_COLORS.development, ['#ffffff'])
+    const excludeFile = `${name}.exclude-white.png`
+    await writeFile(path.join(outDir, excludeFile), excludePng)
+
+    const cells = [
+      name,
+      `<img src="${sourceFile}" alt="${name} original">`,
+      `<img src="${excludeFile}" alt="${name} exclude white">`,
+    ]
     for (const [env, color] of envs) {
       const png = await tintIcon(sourcePath, color)
       const file = `${name}.${env}.png`
@@ -83,7 +91,7 @@ img { width: 64px; height: 64px; object-fit: contain; background-color: #fff; ba
 </head>
 <body>
 <table>
-<thead><tr><th>brand</th><th>original</th><th>development</th><th>preview</th><th>staging</th></tr></thead>
+<thead><tr><th>brand</th><th>original</th><th>exclude white</th><th>development</th><th>preview</th><th>staging</th></tr></thead>
 <tbody>
 ${rows.join('\n')}
 </tbody>

@@ -18,6 +18,7 @@ beforeEach(async () => {
 afterEach(() => {
   process.chdir(prevCwd)
   vi.unstubAllEnvs()
+  vi.restoreAllMocks()
 })
 
 const DEV = { environment: 'development' }
@@ -124,6 +125,10 @@ describe('withEnvStyles', () => {
 
   it('throws immediately on an invalid inactive color', () => {
     expect(() => withEnvStyles({}, { ...DEV, color: { staging: 'purple' } })).toThrow(/invalid color/)
+  })
+
+  it('throws immediately on an invalid excluded color', () => {
+    expect(() => withEnvStyles({}, { ...DEV, excludeColors: ['#fff', 'white'] })).toThrow(/invalid color/)
   })
 
   describe('env detection precedence', () => {

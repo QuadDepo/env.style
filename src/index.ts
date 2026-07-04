@@ -10,6 +10,8 @@ export interface EnvStylesOptions {
   color?: Partial<Record<string, string>>
   /** Force the environment instead of detecting it. */
   environment?: string
+  /** Keep pixels near these colors untinted. */
+  excludeColors?: string[]
 }
 
 type PhaseCtx = { defaultConfig: NextConfig }
@@ -27,13 +29,14 @@ export function withEnvStyles(
   for (const value of Object.values(options.color ?? {})) {
     if (value !== undefined) parseHex(value)
   }
+  for (const value of options.excludeColors ?? []) parseHex(value)
   if (options.favicon === false || env === 'production') return nextConfig // zero footprint
 
   const color = options.color?.[env] ?? DEFAULT_COLORS[env] ?? FALLBACK_COLOR
 
   return async (phase, ctx) => {
     const config = typeof nextConfig === 'function' ? await nextConfig(phase, ctx) : nextConfig
-    return decorate(config, color)
+    return decorate(config, color, options.excludeColors ?? [])
   }
 }
 
@@ -47,15 +50,14 @@ function detectEnv(override?: string): string {
   )
 }
 
-async function decorate(config: NextConfig, color: string): Promise<NextConfig> {
+async function decorate(config: NextConfig, color: string, excludeColors: string[]): Promise<NextConfig> {
   const root = process.cwd()
   const icons = findSourceIcons(root)
-  const icon = icons[0] ?? null
   const sources = [...new Set(['/favicon.ico', ...icons.map(iconUrl)])]
   const destination = `/${OUT_DIR}/icon.png`
 
   try {
-    const png = await tintIcon(icon, color)
+    const png = await tintIcon(icons[0] ?? null, color, excludeColors)
     const outDir = path.join(root, 'public', OUT_DIR)
     await mkdir(outDir, { recursive: true })
     await writeFile(path.join(outDir, 'icon.png'), png)

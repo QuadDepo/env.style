@@ -20,6 +20,14 @@ async function whiteSquarePng(): Promise<Buffer> {
     .toBuffer()
 }
 
+async function redSquarePng(): Promise<Buffer> {
+  return sharp({
+    create: { width: 32, height: 32, channels: 4, background: { r: 255, g: 0, b: 0, alpha: 1 } },
+  })
+    .png()
+    .toBuffer()
+}
+
 /** Minimal valid .ico containing a single PNG-compressed 64x64 entry. */
 function buildIco(png: Buffer): Buffer {
   const header = Buffer.alloc(6 + 16)
@@ -62,6 +70,26 @@ describe('tintIcon', () => {
     const center = await centerPixel(out)
     expect(center.r).toBeGreaterThan(200) // white shifted to red
     expect(center.g).toBeLessThan(100)
+    expect(center.a).toBe(255)
+  })
+
+  it('leaves excluded white pixels near-white', async () => {
+    const src = path.join(dir, 'icon.png')
+    await writeFile(src, await whiteSquarePng())
+    const out = await tintIcon(src, '#3b82f6', ['#fff'])
+    const center = await centerPixel(out)
+    expect(center.r).toBeGreaterThan(230)
+    expect(center.g).toBeGreaterThan(230)
+    expect(center.b).toBeGreaterThan(230)
+    expect(center.a).toBe(255)
+  })
+
+  it('tints non-excluded pixels', async () => {
+    const src = path.join(dir, 'icon.png')
+    await writeFile(src, await redSquarePng())
+    const out = await tintIcon(src, '#3b82f6', ['#fff'])
+    const center = await centerPixel(out)
+    expect(center.b).toBeGreaterThan(100)
     expect(center.a).toBe(255)
   })
 
