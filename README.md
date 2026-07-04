@@ -1,8 +1,8 @@
 # env.style 🎨
 
-Five browser tabs, all the same Next.js favicon — dev, preview, production —
-and you keep editing the wrong one. `env.style` wraps your Next.js config and tints your
-existing favicon per environment at build time, Vercel-style: same mark, different color.
+Five browser tabs, all the same favicon — dev, preview, production — and you keep
+editing the wrong one. `env.style` tints your existing favicon per environment at build
+time, Vercel-style: same mark, different color.
 Production is never touched.
 
 ## Install
@@ -14,6 +14,8 @@ pnpm add env.style
 
 ## Usage
 
+### Next.js
+
 ```ts
 // next.config.ts
 import { withEnvStyles } from 'env.style'
@@ -22,6 +24,19 @@ export default withEnvStyles(nextConfig)
 ```
 
 That's the only change needed. No layout edits, no manual favicon files.
+
+### Vite
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { envStyle } from 'env.style/vite'
+
+export default defineConfig({
+  plugins: [react(), envStyle()],
+})
+```
 
 ## Default colors
 
