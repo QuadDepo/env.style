@@ -1,9 +1,7 @@
-import { existsSync } from 'node:fs'
-import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { NextConfig } from 'next'
-import { detectEnv, type EnvStylesOptions } from './env'
-import { DEFAULT_COLORS, FALLBACK_COLOR, findSourceIcons, iconUrl, parseHex, tintIcon, toPngBase } from './tint'
+import { detectEnv, resolveColor, validateColorOptions, type EnvStylesOptions } from './env'
+import { customIconPng, findSourceIcons, iconUrl, TINTED_ICON_URL, tintIcon, writeTintedIcon } from './tint'
 
 export type { EnvStylesOptions } from './env'
 
@@ -11,7 +9,23 @@ type PhaseCtx = { defaultConfig: NextConfig }
 type NextConfigFn = (phase: string, ctx: PhaseCtx) => NextConfig | Promise<NextConfig>
 export type NextConfigInput = NextConfig | NextConfigFn
 
-const OUT_DIR = '__envstyle'
+const NEXT_ICON_CANDIDATES = [
+  'app/favicon.ico',
+  'src/app/favicon.ico',
+  'app/icon.ico',
+  'src/app/icon.ico',
+  'app/icon.png',
+  'app/icon.svg',
+  'app/icon.jpg',
+  'app/icon.jpeg',
+  'src/app/icon.png',
+  'src/app/icon.svg',
+  'src/app/icon.jpg',
+  'src/app/icon.jpeg',
+  'public/favicon.ico',
+  'public/favicon.png',
+  'public/favicon.svg',
+]
 
 export function withEnvStyles(
   nextConfig: NextConfigInput = {},
@@ -20,14 +34,10 @@ export function withEnvStyles(
   const env = detectEnv(options.environment, () =>
     process.env.NODE_ENV === 'development' ? 'development' : 'production'
   )
-  // fail loudly on a bad config value, not mid-build
-  for (const value of Object.values(options.color ?? {})) {
-    if (value !== undefined) parseHex(value)
-  }
-  for (const value of options.excludeColors ?? []) parseHex(value)
+  validateColorOptions(options)
   if (options.favicon === false || env === 'production') return nextConfig // zero footprint
 
-  const color = options.color?.[env] ?? DEFAULT_COLORS[env] ?? FALLBACK_COLOR
+  const color = resolveColor(env, options.color)
 
   return async (phase, ctx) => {
     const config = typeof nextConfig === 'function' ? await nextConfig(phase, ctx) : nextConfig
@@ -37,17 +47,13 @@ export function withEnvStyles(
 
 async function decorate(config: NextConfig, color: string, excludeColors: string[], customIcon?: string): Promise<NextConfig> {
   const root = process.cwd()
-  const icons = findSourceIcons(root)
+  const icons = findSourceIcons(root, NEXT_ICON_CANDIDATES)
   const sources = [...new Set(['/favicon.ico', ...icons.map(iconUrl)])]
-  const destination = `/${OUT_DIR}/icon.png`
 
   try {
     const png =
       (await customIconPng(root, customIcon)) ?? (await tintIcon(icons[0] ?? null, color, excludeColors))
-    const outDir = path.join(root, 'public', OUT_DIR)
-    await mkdir(outDir, { recursive: true })
-    await writeFile(path.join(outDir, 'icon.png'), png)
-    await writeFile(path.join(outDir, '.gitignore'), '*\n')
+    await writeTintedIcon(path.join(root, 'public'), png)
   } catch (err) {
     console.warn(`env.style: favicon tinting skipped — ${err instanceof Error ? err.message : err}`)
     return config
@@ -55,18 +61,9 @@ async function decorate(config: NextConfig, color: string, excludeColors: string
 
   return {
     ...config,
-    rewrites: mergeRewrites(config.rewrites, sources.map((source) => ({ source, destination }))),
-    headers: mergeHeaders(config.headers, [...sources, destination]),
+    rewrites: mergeRewrites(config.rewrites, sources.map((source) => ({ source, destination: TINTED_ICON_URL }))),
+    headers: mergeHeaders(config.headers, [...sources, TINTED_ICON_URL]),
   }
-}
-
-/** A custom icon is the user's own env styling — serve it untouched. */
-async function customIconPng(root: string, customIcon?: string): Promise<Buffer | null> {
-  if (!customIcon) return null
-  const resolved = path.resolve(root, customIcon)
-  const png = existsSync(resolved) ? await toPngBase(resolved) : null
-  if (!png) console.warn(`env.style: icon "${customIcon}" not readable — falling back to auto-discovery`)
-  return png
 }
 
 type OurRewrite = { source: string; destination: string }

@@ -1,42 +1,39 @@
 import { existsSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Sharp } from 'sharp'
 import decodeIco from 'decode-ico'
 
-export const DEFAULT_COLORS: Record<string, string> = {
-  development: '#3b82f6',
-  preview: '#f59e0b',
-}
-export const FALLBACK_COLOR = '#6b7280'
+export const OUT_DIR = '__envstyle'
+/** Where writeTintedIcon's output is served from, relative to the site root. */
+export const TINTED_ICON_URL = `/${OUT_DIR}/icon.png`
 
 export const SIZE = 64
 const TINT_ALPHA = 0.75
-const TOLERANCE = 48 // prototype threshold for near-identical brand colors
+const TOLERANCE = 48 // redmean distance below which a pixel counts as an excluded color and stays untinted
 const RAMP = 32 // soft edge avoids halos around antialiased pixels
 
 type Rgb = { r: number; g: number; b: number }
 
-const ICON_CANDIDATES = [
-  'app/favicon.ico',
-  'src/app/favicon.ico',
-  'app/icon.ico',
-  'src/app/icon.ico',
-  'app/icon.png',
-  'app/icon.svg',
-  'app/icon.jpg',
-  'app/icon.jpeg',
-  'src/app/icon.png',
-  'src/app/icon.svg',
-  'src/app/icon.jpg',
-  'src/app/icon.jpeg',
-  'public/favicon.ico',
-  'public/favicon.png',
-  'public/favicon.svg',
-]
-
-export function findSourceIcons(root: string, candidates = ICON_CANDIDATES): string[] {
+export function findSourceIcons(root: string, candidates: string[]): string[] {
   return candidates.map((rel) => path.join(root, rel)).filter((abs) => existsSync(abs))
+}
+
+/** Write the tinted icon into publicDir/__envstyle/, which self-gitignores. */
+export async function writeTintedIcon(publicDir: string, png: Buffer): Promise<void> {
+  const outDir = path.join(publicDir, OUT_DIR)
+  await mkdir(outDir, { recursive: true })
+  await writeFile(path.join(outDir, 'icon.png'), png)
+  await writeFile(path.join(outDir, '.gitignore'), '*\n')
+}
+
+/** A custom icon is the user's own env styling — serve it untouched. */
+export async function customIconPng(root: string, customIcon?: string): Promise<Buffer | null> {
+  if (!customIcon) return null
+  const resolved = path.resolve(root, customIcon)
+  const png = existsSync(resolved) ? await toPngBase(resolved) : null
+  if (!png) console.warn(`env.style: icon "${customIcon}" not readable — falling back to auto-discovery`)
+  return png
 }
 
 /** URL the found icon is conventionally served at, e.g. app/icon.png → /icon.png. */
@@ -131,6 +128,6 @@ export async function toPngBase(iconPath: string): Promise<Buffer | null> {
       .png()
       .toBuffer()
   } catch {
-    return null // unreadable icon → caller falls back to the circle
+    return null // unreadable icon → callers pick their fallback (circle or auto-discovery)
   }
 }

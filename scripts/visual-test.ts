@@ -1,6 +1,7 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { tintIcon, DEFAULT_COLORS } from '../src/tint.ts'
+import { DEFAULT_COLORS } from '../src/env.ts'
+import { tintIcon } from '../src/tint.ts'
 
 const brands = [
   'github.com',

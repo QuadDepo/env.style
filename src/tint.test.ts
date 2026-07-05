@@ -130,27 +130,21 @@ describe('tintIcon', () => {
 })
 
 describe('findSourceIcons', () => {
-  it('returns icons in priority order', async () => {
+  const CANDIDATES = ['app/favicon.ico', 'app/icon.png', 'public/favicon.png']
+
+  it('returns existing candidates in priority order', async () => {
     await mkdir(path.join(dir, 'app'), { recursive: true })
     await mkdir(path.join(dir, 'public'), { recursive: true })
-    await writeFile(path.join(dir, 'app/favicon.ico'), '')
     await writeFile(path.join(dir, 'app/icon.png'), '')
     await writeFile(path.join(dir, 'public/favicon.png'), '')
-    expect(findSourceIcons(dir)).toEqual([
-      path.join(dir, 'app/favicon.ico'),
+    expect(findSourceIcons(dir, CANDIDATES)).toEqual([
       path.join(dir, 'app/icon.png'),
       path.join(dir, 'public/favicon.png'),
     ])
   })
 
-  it('finds icons under src/', async () => {
-    await mkdir(path.join(dir, 'src/app'), { recursive: true })
-    await writeFile(path.join(dir, 'src/app/icon.png'), '')
-    expect(findSourceIcons(dir)).toEqual([path.join(dir, 'src/app/icon.png')])
-  })
-
   it('returns an empty array when nothing exists', () => {
-    expect(findSourceIcons(dir)).toEqual([])
+    expect(findSourceIcons(dir, CANDIDATES)).toEqual([])
   })
 })
 
