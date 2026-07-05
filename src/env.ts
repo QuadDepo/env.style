@@ -25,9 +25,9 @@ export const FALLBACK_COLOR = '#6b7280'
 export function detectEnv(override: string | undefined, frameworkDefault: () => string): string {
   return (
     override ??
-    process.env.ENV_STYLES_ENV ??
     process.env.VERCEL_TARGET_ENV ??
     process.env.VERCEL_ENV ??
+    process.env.ENV_STYLES_ENV ??
     frameworkDefault()
   )
 }

@@ -179,9 +179,9 @@ describe('withEnvStyles', () => {
       expect(withEnvStyles(config, { environment: 'production' })).toBe(config)
     })
 
-    it('ENV_STYLES_ENV beats VERCEL_ENV', () => {
-      vi.stubEnv('ENV_STYLES_ENV', 'production')
-      vi.stubEnv('VERCEL_ENV', 'preview')
+    it('VERCEL_ENV beats ENV_STYLES_ENV', () => {
+      vi.stubEnv('VERCEL_ENV', 'production')
+      vi.stubEnv('ENV_STYLES_ENV', 'preview')
       const config = {}
       expect(withEnvStyles(config)).toBe(config)
     })
