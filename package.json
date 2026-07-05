@@ -1,8 +1,14 @@
 {
   "name": "env.style",
   "version": "0.1.0",
-  "description": "Environment-tinted favicons for Next.js — see at a glance whether a tab is dev, preview, staging, or production.",
+  "description": "Environment-tinted favicons for Next.js and Vite — see at a glance whether a tab is dev, preview, staging, or production.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/QuadDepo/env.style.git"
+  },
+  "homepage": "https://github.com/QuadDepo/env.style#readme",
+  "bugs": "https://github.com/QuadDepo/env.style/issues",
   "type": "module",
   "exports": {
     ".": {
@@ -41,6 +47,8 @@
   },
   "keywords": [
     "nextjs",
+    "vite",
+    "vite-plugin",
     "favicon",
     "environment",
     "dx",
