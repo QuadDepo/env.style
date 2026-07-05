@@ -1,3 +1,4 @@
+import { CenteredSticky } from './centered-sticky'
 import { InstallCommand } from './install-command'
 import { ConfigEditor } from './playground/config-editor'
 import { IconEditor } from './playground/icon-editor'
@@ -9,20 +10,38 @@ const NPM = 'https://www.npmjs.com/package/env.style'
 
 export default function App() {
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-16 px-6 py-16">
+    <div className="mx-auto flex max-w-7xl flex-col gap-16 px-6 py-16">
       <Header />
       <PlaygroundProvider>
-        <main className="mt-8 mb-96 grid items-start gap-10 lg:mt-24 lg:grid-cols-2">
+        <main className="mt-8 mb-96 grid items-start gap-10 lg:mt-24 lg:grid-cols-2 lg:gap-20">
           <div className="flex flex-col gap-16 lg:gap-56">
             <HeroSection />
-            <div className="flex flex-col gap-24">
-              <ConfigEditor />
-              <IconEditor />
+            <div className="flex flex-col gap-y-64">
+              <section className="flex flex-col gap-8">
+                <div className="flex flex-col gap-3">
+                  <h2 className="text-2xl font-semibold tracking-tight">Tint by environment</h2>
+                  <p className="max-w-xl text-muted-foreground">
+                    Pick a color per environment — the preview and this page&apos;s real favicon
+                    retint live. Production is never touched.
+                  </p>
+                </div>
+                <ConfigEditor />
+              </section>
+              <section className="flex flex-col gap-8">
+                <div className="flex flex-col gap-3">
+                  <h2 className="text-2xl font-semibold tracking-tight">Or bring your own icons</h2>
+                  <p className="max-w-xl text-muted-foreground">
+                    Set an icon per environment and it&apos;s served as-is, never tinted. Any
+                    environment you leave out falls back to the tint.
+                  </p>
+                </div>
+                <IconEditor />
+              </section>
             </div>
           </div>
-          <aside className="lg:sticky lg:top-16 lg:self-start">
+          <CenteredSticky>
             <BrowserPreview />
-          </aside>
+          </CenteredSticky>
         </main>
       </PlaygroundProvider>
       <Footer />
