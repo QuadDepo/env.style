@@ -1,6 +1,6 @@
 {
 	"name": "env.style",
-	"version": "0.1.0",
+	"version": "1.0.1",
 	"packageManager": "pnpm@10.19.0",
 	"description": "Environment-tinted favicons for Next.js and Vite — see at a glance whether a tab is dev, preview, staging, or production.",
 	"license": "MIT",
@@ -39,6 +39,10 @@
 	"files": [
 		"dist"
 	],
+	"sideEffects": false,
+	"engines": {
+		"node": ">=18.17.0"
+	},
 	"scripts": {
 		"build": "tsup src/index.ts src/vite.ts --format esm,cjs --dts",
 		"prepublishOnly": "pnpm build",

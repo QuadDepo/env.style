@@ -54,7 +54,7 @@ used as the `color` key. Any env without a color gets the gray fallback — exce
 
 ## Options
 
-- `favicon?: boolean` — kill switch for the whole tool. Default `true`.
+- `enabled?: boolean` — kill switch for the whole tool. Default `true`.
 - `color?: Partial<Record<string, string>>` — override the tint color per environment.
 - `environment?: string` — force the environment instead of detecting it.
 - `excludeColors?: string[]` — keep pixels near these colors untinted (e.g. white

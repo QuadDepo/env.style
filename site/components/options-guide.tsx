@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FrameworkSelect } from "./demo/framework-select";
 import { CONFIG_FILES, useDemo } from "./demo/provider";
 
-type OptionId = "favicon" | "environment" | "color" | "icon" | "excludeColors";
+type OptionId = "enabled" | "environment" | "color" | "icon" | "excludeColors";
 
 const OPTIONS: {
 	id: OptionId;
@@ -14,12 +14,11 @@ const OPTIONS: {
 	description: string;
 }[] = [
 	{
-		id: "favicon",
-		prefix: "favicon: ",
+		id: "enabled",
+		prefix: "enabled: ",
 		value: "true",
 		type: "boolean, default true",
-		description:
-			"Turn env.style off for a specific environment or CI job.",
+		description: "Turn env.style off for a specific environment or CI job.",
 	},
 	{
 		id: "environment",
@@ -50,14 +49,13 @@ const OPTIONS: {
 		prefix: "excludeColors: [",
 		value: "'#e94435'",
 		type: "string[]",
-		description:
-			"Keep brand colors untouched while tinting.",
+		description: "Keep brand colors untouched while tinting.",
 	},
 ];
 
 // suffix closes whatever the prefix opened, so it stays dimmed with the prefix
 const SUFFIXES: Record<OptionId, string> = {
-	favicon: ",",
+	enabled: ",",
 	environment: ",",
 	color: " },",
 	icon: " },",

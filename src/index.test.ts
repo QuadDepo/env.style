@@ -80,9 +80,9 @@ describe("withEnvStyles", () => {
 		expect(withEnvStyles(config)).toBe(config);
 	});
 
-	it("returns the config untouched when favicon is disabled", () => {
+	it("returns the config untouched when disabled", () => {
 		const config = {};
-		expect(withEnvStyles(config, { ...DEV, favicon: false })).toBe(config);
+		expect(withEnvStyles(config, { ...DEV, enabled: false })).toBe(config);
 	});
 
 	it("styles a dev env: writes tinted icon, self-ignoring folder, rewrites and headers", async () => {

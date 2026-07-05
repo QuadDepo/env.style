@@ -51,7 +51,7 @@ export function withEnvStyles(
 		process.env.NODE_ENV === "development" ? "development" : "production",
 	);
 	validateColorOptions(options);
-	if (options.favicon === false || env === "production") return nextConfig; // zero footprint
+	if (options.enabled === false || env === "production") return nextConfig; // zero footprint
 
 	const color = resolveColor(env, options.color);
 	const icon = resolveIcon(env, options.icon);
