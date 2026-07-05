@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import './globals.css'
 
 const description =
-  'Color your favicon for dev, preview, and staging, so every tab shows where you are.'
+  'Style your favicon with colors or custom icons, so every tab shows where you are.'
 
 export const metadata: Metadata = {
   title: 'env.style | Environment favicons',
