@@ -71,11 +71,10 @@ export default withEnvStyles(nextConfig, {
 
 ## How it works
 
-- Detects the environment: `environment` option → `VERCEL_TARGET_ENV` → `VERCEL_ENV`
-  → `ENV_STYLES_ENV`. The platform's own environment leads; `ENV_STYLES_ENV` is the
-  fallback for platforms without one, or self-hosting. If none is set, Next.js falls
-  back to `NODE_ENV`; Vite falls back to the command (dev server = development,
-  `vite build` = production — set `ENV_STYLES_ENV` to tint a build).
+- Detects the environment: `environment` option → `ENV_STYLES_ENV` → `VERCEL_TARGET_ENV`
+  → `VERCEL_ENV`. If none is set, Next.js falls back to `NODE_ENV`; Vite falls back to
+  the command (dev server = development, `vite build` = production — set
+  `ENV_STYLES_ENV` to tint a build).
 - Tints your existing favicon with `sharp` and writes it to `public/__envstyle/`, which
   self-gitignores.
 - Next.js: serves the tinted icon at your normal favicon URLs via `beforeFiles`
