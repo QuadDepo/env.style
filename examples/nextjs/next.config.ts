@@ -1,7 +1,10 @@
-import { withEnvStyles } from 'env.style'
+import { withEnvStyles } from "env.style";
 
-export default withEnvStyles({}, {
-    color: {
-        development: '#00ff00',
-    }
-})
+export default withEnvStyles(
+	{},
+	{
+		color: {
+			development: "#00ff00",
+		},
+	},
+);

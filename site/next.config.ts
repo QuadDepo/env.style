@@ -1,3 +1,3 @@
-import { withEnvStyles } from 'env.style'
+import { withEnvStyles } from "env.style";
 
-export default withEnvStyles({})
+export default withEnvStyles({});

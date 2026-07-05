@@ -1,19 +1,19 @@
 {
-  "name": "example-nextjs",
-  "private": true,
-  "scripts": {
-    "dev": "next dev -p 3123",
-    "build": "next build"
-  },
-  "dependencies": {
-    "env.style": "link:../..",
-    "next": "^16.2.10",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
-  },
-  "devDependencies": {
-    "@types/node": "^26.1.0",
-    "@types/react": "^19.2.0",
-    "typescript": "^5.9.3"
-  }
+	"name": "example-nextjs",
+	"private": true,
+	"scripts": {
+		"dev": "next dev -p 3123",
+		"build": "next build"
+	},
+	"dependencies": {
+		"env.style": "link:../..",
+		"next": "^16.2.10",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0"
+	},
+	"devDependencies": {
+		"@types/node": "^26.1.0",
+		"@types/react": "^19.2.0",
+		"typescript": "^5.9.3"
+	}
 }
