@@ -17,9 +17,9 @@ const OPTIONS: {
 		id: "favicon",
 		prefix: "favicon: ",
 		value: "true",
-		type: "boolean — default true",
+		type: "boolean, default true",
 		description:
-			"The kill switch. Set false and env.style does nothing at all — handy for switching it off in a specific environment or CI job.",
+			"Turn env.style off for a specific environment or CI job.",
 	},
 	{
 		id: "environment",
@@ -27,7 +27,7 @@ const OPTIONS: {
 		value: "'staging'",
 		type: "string",
 		description:
-			"Force the environment instead of detecting it. Without it, detection is ENV_STYLES_ENV, then Vercel's environment, then the framework default.",
+			"Set the environment yourself. Otherwise env.style uses ENV_STYLES_ENV, then Vercel, then the framework default.",
 	},
 	{
 		id: "color",
@@ -35,7 +35,7 @@ const OPTIONS: {
 		value: "'#ff00ff'",
 		type: "Partial<Record<string, string>>",
 		description:
-			"Tint color per environment. Anything you don't set keeps the defaults — blue for development, amber for preview, gray for everything else.",
+			"Set tint colors by environment. Unset environments use the defaults.",
 	},
 	{
 		id: "icon",
@@ -43,7 +43,7 @@ const OPTIONS: {
 		value: "'./flask.svg'",
 		type: "string | Partial<Record<string, string>>",
 		description:
-			"A ready-made icon — one for all styled environments, or one per environment. Served as-is, never tinted. Environments missing from the map fall back to tinting.",
+			"Use one icon everywhere, or set icons per environment. Missing icons fall back to tinting.",
 	},
 	{
 		id: "excludeColors",
@@ -51,7 +51,7 @@ const OPTIONS: {
 		value: "'#e94435'",
 		type: "string[]",
 		description:
-			"Pixels close to these colors keep their original color when tinting — protects a brand mark inside your favicon.",
+			"Keep brand colors untouched while tinting.",
 	},
 ];
 
@@ -113,7 +113,7 @@ export function OptionsGuide() {
 	return (
 		<section className="relative z-20 flex flex-col gap-8 lg:-mt-56">
 			<h2 className="text-2xl font-semibold tracking-tight">
-				Everything you can tune
+				Tune the details
 			</h2>
 			<div className="overflow-hidden rounded-lg border border-border bg-card">
 				<div className="flex items-center justify-between border-b border-border px-4 py-2">
