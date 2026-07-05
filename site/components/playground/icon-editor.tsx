@@ -14,7 +14,7 @@ const ICON_ENVS = ENVS.filter((env) => env.id !== 'production')
 export function IconEditor() {
   const { state, actions } = usePlayground()
   // resolves at fire time: first env with a custom icon, or skip if none is set
-  const sectionRef = useSectionEnv(() => ENVS.find((env) => state.customIcons[env.id])?.id ?? null)
+  const sectionRef = useSectionEnv('icon', () => ENVS.find((env) => state.customIcons[env.id])?.id ?? null)
 
   const option: SnippetBlock = {
     jsx: (indent: string) => (

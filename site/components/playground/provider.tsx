@@ -19,9 +19,8 @@ const STATIC_ICONS: Record<string, string> = {
 
 export type CustomIcon = { src: string; path: string }
 
-// development stays null so the default tab still demos live color tinting
 const DEFAULT_CUSTOM_ICONS: Record<string, CustomIcon | null> = {
-  development: null,
+  development: { src: '/premade/wrench.svg', path: './wrench.svg' },
   preview: { src: '/premade/eye.svg', path: './eye.svg' },
   staging: { src: '/premade/flask.svg', path: './flask.svg' },
   production: null,
@@ -36,9 +35,10 @@ interface PlaygroundState {
   customIcons: Record<string, CustomIcon | null>
   icons: Record<string, string>
   file: ConfigFile
-  dirty: boolean
   /** Env id shown in the preview; driven by scroll section and manual tab clicks. */
   activeEnv: string
+  /** Which scroll section is in view; determines whether `icons` shows custom icons or colors only. */
+  activeSection: 'color' | 'icon'
 }
 
 interface PlaygroundActions {
@@ -47,7 +47,7 @@ interface PlaygroundActions {
   setIcon: (id: string, icon: CustomIcon | null) => void
   setFile: (file: ConfigFile) => void
   setActiveEnv: (id: string) => void
-  reset: () => void
+  setActiveSection: (section: 'color' | 'icon') => void
 }
 
 interface PlaygroundContextValue {
@@ -69,11 +69,9 @@ export function PlaygroundProvider({ children }: { children: ReactNode }) {
   const [tintedIcons, setTintedIcons] = useState(STATIC_ICONS)
   const [file, setFile] = useState<ConfigFile>('next')
   const [activeEnv, setActiveEnv] = useState('development')
+  const [activeSection, setActiveSection] = useState<'color' | 'icon'>('color')
+  // drives the tint effect below (static PNGs vs live canvas tints), not exposed directly
   const colorsDirty = Object.keys(DEFAULT_COLORS).some((id) => colors[id] !== DEFAULT_COLORS[id])
-  const iconsDirty = Object.keys(DEFAULT_CUSTOM_ICONS).some(
-    (id) => customIcons[id]?.path !== DEFAULT_CUSTOM_ICONS[id]?.path,
-  )
-  const dirty = colorsDirty || iconsDirty
 
   useEffect(() => {
     if (!colorsDirty) {
@@ -97,24 +95,24 @@ export function PlaygroundProvider({ children }: { children: ReactNode }) {
       setIcon: (id, icon) => setCustomIcons((c) => ({ ...c, [id]: icon })),
       setFile,
       setActiveEnv,
-      reset: () => {
-        setColors(DEFAULT_COLORS)
-        setCustomIcons(DEFAULT_CUSTOM_ICONS)
-      },
+      setActiveSection,
     }),
     [],
   )
 
   // memoized: a fresh object identity here would defeat the value memo below
+  // color section ignores custom icons entirely; icon section falls back to tint (mirrors the library)
   const icons = useMemo(
     () =>
-      Object.fromEntries(Object.keys(tintedIcons).map((id) => [id, customIcons[id]?.src ?? tintedIcons[id]])),
-    [tintedIcons, customIcons],
+      activeSection === 'color'
+        ? tintedIcons
+        : Object.fromEntries(Object.keys(tintedIcons).map((id) => [id, customIcons[id]?.src ?? tintedIcons[id]])),
+    [activeSection, tintedIcons, customIcons],
   )
 
   const value = useMemo<PlaygroundContextValue>(
-    () => ({ state: { colors, customIcons, icons, file, dirty, activeEnv }, actions }),
-    [colors, customIcons, icons, file, dirty, activeEnv, actions],
+    () => ({ state: { colors, customIcons, icons, file, activeEnv, activeSection }, actions }),
+    [colors, customIcons, icons, file, activeEnv, activeSection, actions],
   )
 
   return <PlaygroundContext value={value}>{children}</PlaygroundContext>

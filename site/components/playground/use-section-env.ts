@@ -4,12 +4,13 @@ import { useEffect, useRef } from 'react'
 import { usePlayground } from './provider'
 
 /**
- * Switches the preview to the env this section resolves to whenever the section
- * crosses the vertical center of the viewport. `resolve` runs at fire time (read
- * via ref) so it isn't a dep — the observer survives icon/color edits. Returning
- * null skips the switch (e.g. no custom icon is set yet).
+ * Switches the preview to this section (and the env it resolves to) whenever the
+ * section crosses the vertical center of the viewport. `resolve` runs at fire time
+ * (read via ref) so it isn't a dep — the observer survives icon/color edits.
+ * Returning null from `resolve` still switches the section, just not the active env
+ * (e.g. no custom icon is set yet).
  */
-export function useSectionEnv(resolve: () => string | null) {
+export function useSectionEnv(section: 'color' | 'icon', resolve: () => string | null) {
   const { actions } = usePlayground()
   const ref = useRef<HTMLDivElement>(null)
   const resolveRef = useRef(resolve)
@@ -21,6 +22,7 @@ export function useSectionEnv(resolve: () => string | null) {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting) return
+        actions.setActiveSection(section)
         const id = resolveRef.current()
         if (id) actions.setActiveEnv(id)
       },
@@ -30,7 +32,7 @@ export function useSectionEnv(resolve: () => string | null) {
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [actions])
+  }, [actions, section])
 
   return ref
 }

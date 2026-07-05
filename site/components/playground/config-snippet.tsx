@@ -20,13 +20,7 @@ export function TokenShell({ children }: { children: ReactNode }) {
 export const TOKEN_TRIGGER_CLASS = 'size-3.5 shrink-0 cursor-pointer rounded-[4px] border border-border'
 
 /** Owns the next/vite config-file scaffolding once for both the color and icon editors. */
-export function ConfigSnippet({
-  option,
-  hint,
-}: {
-  option: SnippetBlock
-  hint?: ReactNode
-}) {
+export function ConfigSnippet({ option }: { option: SnippetBlock }) {
   const { state } = usePlayground()
   const file = state.file
 
@@ -59,7 +53,6 @@ export function ConfigSnippet({
           </>
         )}
       </CodeBlock>
-      {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
     </div>
   )
 }

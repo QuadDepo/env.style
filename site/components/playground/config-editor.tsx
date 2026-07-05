@@ -7,7 +7,7 @@ import { useSectionEnv } from './use-section-env'
 
 export function ConfigEditor() {
   const { state, actions } = usePlayground()
-  const sectionRef = useSectionEnv(() => 'development')
+  const sectionRef = useSectionEnv('color', () => 'development')
 
   const option: SnippetBlock = {
     jsx: (indent: string) => (
@@ -33,19 +33,7 @@ export function ConfigEditor() {
 
   return (
     <div ref={sectionRef}>
-      <ConfigSnippet
-        option={option}
-        hint={
-          state.dirty && (
-            <button
-              onClick={actions.reset}
-              className="underline underline-offset-2 transition-colors hover:text-foreground"
-            >
-              Reset to defaults
-            </button>
-          )
-        }
-      />
+      <ConfigSnippet option={option} />
     </div>
   )
 }
