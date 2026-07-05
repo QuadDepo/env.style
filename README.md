@@ -125,7 +125,7 @@ export default withEnvStyles(nextConfig, {
 ## Contributors
 
 <a href="https://github.com/QuadDepo/env.style/graphs/contributors">
-  <img alt="Contributors" src="https://shieldcn.dev/contributors/QuadDepo/env.style.svg?limit=12&theme=zinc&bg=transparent&border=false" />
+  <img alt="Contributors" src="https://shieldcn.dev/contributors/QuadDepo/env.style.svg?limit=12&theme=zinc&bg=transparent&border=false&title=false" />
 </a>
 
 ## License
