@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { IconFade } from "../icon-fade";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -19,15 +20,22 @@ const FRAMEWORKS: Record<
 
 export function FrameworkSelect() {
 	const { state, actions } = useDemo();
-	const { name, icon: Icon } = FRAMEWORKS[state.file];
+	const { name } = FRAMEWORKS[state.file];
 
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				aria-label="framework"
-				className="flex items-center gap-1.5 rounded-md p-1 font-mono text-xs text-foreground transition-colors hover:bg-muted"
+				className="flex items-center gap-1.5 rounded-md p-1 font-mono text-xs text-foreground transition-[color,background-color,scale] hover:bg-muted active:scale-[0.96]"
 			>
-				<Icon className="size-3.5" />
+				<span className="relative size-3.5 shrink-0">
+					<IconFade show={state.file === "next"}>
+						<NextIcon className="size-full" />
+					</IconFade>
+					<IconFade show={state.file === "vite"}>
+						<ViteIcon className="size-full" />
+					</IconFade>
+				</span>
 				{name}
 				<ChevronDownIcon className="size-3" />
 			</DropdownMenuTrigger>

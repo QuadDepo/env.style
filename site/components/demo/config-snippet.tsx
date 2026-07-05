@@ -22,7 +22,7 @@ export function TokenShell({ children }: { children: ReactNode }) {
 }
 
 export const TOKEN_TRIGGER_CLASS =
-	"size-3.5 shrink-0 cursor-pointer rounded-[4px] border border-border";
+	"size-3.5 shrink-0 cursor-pointer rounded-[4px] border border-border transition-colors duration-300";
 
 /** Owns the next/vite config-file scaffolding once for both the color and icon editors. */
 export function ConfigSnippet({ option }: { option: SnippetBlock }) {

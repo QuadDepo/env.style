@@ -1,8 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ENVS } from "@/lib/envs";
+import { cn } from "@/lib/utils";
 import { useDemo } from "./provider";
+
+/**
+ * Favicon that pops in (scale + blur) when its src changes, cross-fading over
+ * the previous icon so an edit in the config is visible in the tab strip.
+ * Same-src re-renders (and the initial mount) render a plain img — no animation.
+ */
+function FaviconSwap({ src }: { src: string }) {
+	const previousRef = useRef(src);
+	const previous = previousRef.current;
+	useEffect(() => {
+		previousRef.current = src;
+	});
+	const changed = previous !== src;
+
+	return (
+		<span className="relative size-4 shrink-0">
+			{changed && (
+				<img
+					src={previous}
+					alt=""
+					aria-hidden
+					className="absolute inset-0 size-4 rounded-[3px]"
+				/>
+			)}
+			<img
+				key={src}
+				src={src}
+				alt=""
+				className={cn(
+					"relative size-4 rounded-[3px]",
+					changed && "motion-safe:animate-icon-in",
+				)}
+			/>
+		</span>
+	);
+}
 
 function TabStrip({
 	icons,
@@ -35,17 +72,13 @@ function TabStrip({
 							aria-selected={selected}
 							aria-label={env.id}
 							onClick={() => onSelect(env.id)}
-							className={`flex min-w-0 items-center gap-1.5 rounded-t-lg px-3 py-2 font-mono text-xs transition-colors ${
+							className={`flex min-w-0 items-center gap-1.5 rounded-t-lg px-3 py-2 font-mono text-xs transition-[color,background-color,scale] active:scale-[0.96] ${
 								selected
 									? "bg-card text-foreground"
 									: "text-muted-foreground hover:bg-card/50 hover:text-foreground"
 							}`}
 						>
-							<img
-								src={icons[env.id]}
-								alt=""
-								className="size-4 shrink-0 rounded-[3px]"
-							/>
+							<FaviconSwap src={icons[env.id]} />
 							{/* identical titles on purpose — the favicon is the only tell */}
 							<span className="truncate">Acme Inc</span>
 						</button>

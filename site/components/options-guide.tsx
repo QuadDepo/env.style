@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import { FrameworkSelect } from "./demo/framework-select";
 import { CONFIG_FILES, useDemo } from "./demo/provider";
 
@@ -77,13 +78,20 @@ const SCAFFOLD = {
 } as const;
 
 // interval for the passive tour that cycles the selection until the user interacts
-const TOUR_INTERVAL_MS = 2600;
+const TOUR_INTERVAL_MS = 4000;
 
 export function OptionsGuide() {
 	const { state } = useDemo();
 	const [selected, setSelected] = useState<OptionId>("color");
 	const touringRef = useRef(true);
-	const active = OPTIONS.find((option) => option.id === selected)!;
+	const codeRef = useRef<HTMLDivElement>(null);
+	// measured box of the selected row; one absolutely-positioned div glides between rows
+	const [highlight, setHighlight] = useState<{
+		top: number;
+		left: number;
+		width: number;
+		height: number;
+	} | null>(null);
 	const scaffold = SCAFFOLD[state.file];
 
 	// auto-cycles the selection as a passive tour; stops for good on first click
@@ -100,6 +108,28 @@ export function OptionsGuide() {
 		}, TOUR_INTERVAL_MS);
 		return () => clearInterval(id);
 	}, []);
+
+	// remeasures on selection and (via the observer) when the scaffold or breakpoint reflows the rows
+	useLayoutEffect(() => {
+		const container = codeRef.current;
+		if (!container) return;
+		const measure = () => {
+			const row = container.querySelector<HTMLElement>(
+				`[data-option="${selected}"]`,
+			);
+			if (!row) return;
+			setHighlight({
+				top: row.offsetTop,
+				left: row.offsetLeft,
+				width: row.offsetWidth,
+				height: row.offsetHeight,
+			});
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(container);
+		return () => observer.disconnect();
+	}, [selected]);
 
 	function handleSelect(id: OptionId) {
 		touringRef.current = false;
@@ -121,21 +151,32 @@ export function OptionsGuide() {
 					<FrameworkSelect />
 				</div>
 				<div className="grid lg:grid-cols-2">
-					<div className="overflow-x-auto border-b border-border p-6 font-mono text-[13px] leading-loose whitespace-pre lg:border-b-0 lg:border-r lg:border-border lg:p-16">
+					<div
+						ref={codeRef}
+						className="relative overflow-x-auto border-b border-border p-6 font-mono text-[13px] leading-loose whitespace-pre lg:border-b-0 lg:border-r lg:border-border lg:p-16"
+					>
+						{highlight && (
+							<div
+								aria-hidden
+								style={highlight}
+								className="pointer-events-none absolute border-l-2 border-foreground bg-muted transition-[top,left,width,height] duration-300 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none"
+							/>
+						)}
 						<p className="text-muted-foreground/60">{scaffold.open}</p>
 						{OPTIONS.map((option) => {
 							const isSelected = selected === option.id;
 							return (
+								// relative: paints above the highlight (rows keep the transparent border for spacing)
 								<button
 									key={option.id}
 									type="button"
+									data-option={option.id}
 									aria-pressed={isSelected}
 									onClick={() => handleSelect(option.id)}
-									className={`block w-full cursor-pointer border-l-2 pl-2 text-left transition-colors ${
-										isSelected
-											? "border-primary bg-muted"
-											: "border-transparent hover:bg-muted/50"
-									}`}
+									className={cn(
+										"relative block w-full cursor-pointer border-l-2 border-transparent pl-2 text-left transition-colors",
+										!isSelected && "hover:bg-muted/50",
+									)}
 								>
 									<span className="text-muted-foreground">
 										{scaffold.indent}
@@ -150,14 +191,30 @@ export function OptionsGuide() {
 						})}
 						<p className="text-muted-foreground/60">{scaffold.close}</p>
 					</div>
-					<div className="flex flex-col gap-2 p-6 lg:min-h-44 lg:p-16">
-						<span className="font-mono text-sm font-medium">{active.id}</span>
-						<span className="font-mono text-xs text-muted-foreground">
-							{active.type}
-						</span>
-						<p className="text-sm text-muted-foreground leading-relaxed">
-							{active.description}
-						</p>
+					{/* all panels share one grid cell so the card keeps the tallest option's height — no jump when descriptions wrap differently */}
+					<div className="grid p-6 lg:p-16">
+						{/* cross-fade: visibility flips only once the fade ends, and stays out of the a11y tree while hidden */}
+						{OPTIONS.map((option) => (
+							<div
+								key={option.id}
+								className={cn(
+									"col-start-1 row-start-1 flex flex-col gap-2 transition-[opacity,filter,visibility] duration-500 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none",
+									option.id === selected
+										? "opacity-100 blur-none"
+										: "invisible opacity-0 blur-[2px]",
+								)}
+							>
+								<span className="font-mono text-sm font-medium">
+									{option.id}
+								</span>
+								<span className="font-mono text-xs text-muted-foreground">
+									{option.type}
+								</span>
+								<p className="text-sm text-muted-foreground leading-relaxed">
+									{option.description}
+								</p>
+							</div>
+						))}
 					</div>
 				</div>
 			</div>
