@@ -7,11 +7,10 @@ import { usePlayground } from './provider'
 /** Fake browser chrome; clicking a tab retints this page's real favicon. */
 export function BrowserPreview() {
   const {
-    state: { icons, colors, activeEnv },
+    state: { icons, activeEnv },
     actions: { setActiveEnv },
   } = usePlayground()
   const active = ENVS.find((env) => env.id === activeEnv) ?? ENVS[0]
-  const activeColor: string | undefined = colors[active.id]
 
   useEffect(() => {
     // Next emits its own metadata icon link — swap every icon link or the browser may keep the old one
@@ -21,48 +20,77 @@ export function BrowserPreview() {
   }, [active.id, icons])
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      <div className="flex items-end gap-1 border-b border-border bg-muted px-3 pt-2">
-        <div className="mr-2 mb-2.5 flex gap-1.5" aria-hidden>
-          <span className="size-2.5 rounded-full bg-border" />
-          <span className="size-2.5 rounded-full bg-border" />
-          <span className="size-2.5 rounded-full bg-border" />
+    // nested masks (bottom, then right) fade the card into the page so only the
+    // browser's top-left corner reads as chrome — nesting avoids mask-composite quirks
+    <div className="h-full [mask-image:linear-gradient(to_bottom,black_60%,transparent)]">
+      <div className="flex h-full flex-col overflow-hidden rounded-tl-xl border-t border-l border-border bg-card [mask-image:linear-gradient(to_right,black_60%,transparent)]">
+        <div className="flex items-end gap-1 border-b border-border bg-muted px-3 pt-2">
+          <div className="mr-2 mb-2.5 flex gap-1.5" aria-hidden>
+            <span className="size-2.5 rounded-full bg-border" />
+            <span className="size-2.5 rounded-full bg-border" />
+            <span className="size-2.5 rounded-full bg-border" />
+          </div>
+          <div role="tablist" aria-label="Environments" className="flex min-w-0 gap-1">
+            {ENVS.map((env) => {
+              const selected = env.id === active.id
+              return (
+                <button
+                  key={env.id}
+                  role="tab"
+                  aria-selected={selected}
+                  aria-label={env.id}
+                  onClick={() => setActiveEnv(env.id)}
+                  className={`flex min-w-0 items-center gap-1.5 rounded-t-lg px-3 py-2 font-mono text-xs transition-colors ${
+                    selected
+                      ? 'bg-card text-foreground'
+                      : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
+                  }`}
+                >
+                  <img src={icons[env.id]} alt="" className="size-4 shrink-0 rounded-[3px]" />
+                  {/* identical titles on purpose — the favicon is the only tell */}
+                  <span className="truncate">Acme Inc</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
-        <div role="tablist" aria-label="Environments" className="flex min-w-0 flex-1 gap-1">
-          {ENVS.map((env) => {
-            const selected = env.id === active.id
-            return (
-              <button
-                key={env.id}
-                role="tab"
-                aria-selected={selected}
-                aria-label={env.id}
-                onClick={() => setActiveEnv(env.id)}
-                className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-t-lg px-2 py-2 font-mono text-xs transition-colors sm:justify-start ${
-                  selected
-                    ? 'bg-card text-foreground'
-                    : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
-                }`}
-              >
-                <img src={icons[env.id]} alt="" className="size-4 shrink-0 rounded-[3px]" />
-                <span className="hidden truncate sm:inline">{env.label}</span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
 
-      <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
-        <img src={icons[active.id]} alt={`${active.id} favicon`} className="size-16 rounded-xl" />
-        <p className="font-mono text-sm">
-          {active.id}
-          {activeColor && <span className="text-muted-foreground"> · {activeColor}</span>}
-        </p>
-        <p className="max-w-sm text-sm text-muted-foreground">
-          {activeColor
-            ? `Your favicon, tinted ${activeColor}. Look at this page's tab — it just changed too.`
-            : 'Production gets your original favicon, byte for byte. env.style adds zero footprint here.'}
-        </p>
+        {/* skeleton dashboard — deliberately colorless; the tabs above are the demo */}
+        <div className="flex flex-1 gap-5 p-5" aria-hidden>
+          <div className="flex w-24 shrink-0 flex-col gap-3">
+            <div className="mb-2 size-6 rounded-md bg-muted" />
+            <div className="h-2.5 w-full rounded-full bg-muted" />
+            <div className="h-2.5 w-4/5 rounded-full bg-muted" />
+            <div className="h-2.5 w-full rounded-full bg-muted" />
+            <div className="h-2.5 w-3/5 rounded-full bg-muted" />
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            <div className="h-4 w-32 rounded-full bg-muted" />
+            <div className="grid grid-cols-3 gap-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                  <div className="h-2 w-1/2 rounded-full bg-muted" />
+                  <div className="h-3.5 w-2/3 rounded-full bg-muted" />
+                </div>
+              ))}
+            </div>
+            <div className="flex h-48 shrink-0 items-end gap-2 rounded-lg border border-border p-3">
+              {['40%', '65%', '30%', '80%', '55%', '90%', '45%', '70%'].map((height, i) => (
+                <div key={i} className="flex-1 rounded-t bg-muted" style={{ height }} />
+              ))}
+            </div>
+            {/* table rows soak up whatever height is left and crop into the fade */}
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden rounded-lg border border-border p-4">
+              {['w-1/3', 'w-1/4', 'w-2/5', 'w-1/3', 'w-1/5', 'w-2/5', 'w-1/4', 'w-1/3'].map((width, i) => (
+                <div key={i} className="flex shrink-0 items-center gap-3">
+                  <div className="size-4 rounded-full bg-muted" />
+                  <div className={`h-2.5 rounded-full bg-muted ${width}`} />
+                  <div className="ml-auto h-2.5 w-12 rounded-full bg-muted" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
