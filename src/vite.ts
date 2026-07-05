@@ -37,7 +37,7 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 			const env = detectEnv(options.environment, () =>
 				config.command === "serve" ? "development" : "production",
 			);
-			active = options.favicon !== false && env !== "production";
+			active = options.enabled !== false && env !== "production";
 			if (!active) return;
 
 			const color = resolveColor(env, options.color);

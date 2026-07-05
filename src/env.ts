@@ -2,7 +2,7 @@ import { parseHex } from "./tint";
 
 export interface EnvStylesOptions {
 	/** Kill switch for the whole tool. Default true. */
-	favicon?: boolean;
+	enabled?: boolean;
 	/** Per-environment tint color override, e.g. { staging: '#ff00ff' }. */
 	color?: Partial<Record<string, string>>;
 	/** Force the environment instead of detecting it. */
