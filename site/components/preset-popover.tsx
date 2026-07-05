@@ -57,7 +57,7 @@ export function PresetTile({
 			aria-label={ariaLabel}
 			style={style}
 			className={cn(
-				"relative size-8 transition-transform hover:scale-110",
+				"relative size-8 transition-transform hover:scale-110 active:scale-[0.96]",
 				round ? "rounded-full" : "rounded-[4px]",
 			)}
 			onClick={onClick}

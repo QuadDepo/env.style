@@ -25,6 +25,28 @@
 	}
 }
 
+@theme {
+	/* shared "contextual icon" enter: scale 0.25 + blur 4px, per the icon-swap pattern in icon-fade.tsx */
+	--animate-icon-in: icon-in 300ms cubic-bezier(0.2, 0, 0, 1);
+	/* backwards fill so delayed hero items stay hidden until their turn */
+	--animate-fade-up: fade-up 500ms cubic-bezier(0.2, 0, 0, 1) backwards;
+
+	@keyframes icon-in {
+		from {
+			opacity: 0;
+			scale: 0.25;
+			filter: blur(4px);
+		}
+	}
+	@keyframes fade-up {
+		from {
+			opacity: 0;
+			translate: 0 12px;
+			filter: blur(4px);
+		}
+	}
+}
+
 @theme inline {
 	--font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 	--font-mono: var(--font-geist-mono), ui-monospace, monospace;

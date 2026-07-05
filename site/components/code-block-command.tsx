@@ -16,9 +16,9 @@
  * Dependencies: lucide-react
  */
 
-import { Check, Copy } from "lucide-react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { CopyButton } from "./code-block";
 
 type PackageManager = "pnpm" | "yarn" | "npm" | "bun";
 
@@ -148,19 +148,12 @@ export function CodeBlockCommand({
 						</button>
 					))}
 				</div>
-				<button
-					type="button"
-					onClick={handleCopy}
-					className="flex shrink-0 items-center gap-1.5 px-3 py-2.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-					aria-label={copied ? "Copied command" : "Copy command"}
-				>
-					{copied ? (
-						<Check className="size-3.5" />
-					) : (
-						<Copy className="size-3.5" />
-					)}
-					{copied ? "Copied" : "Copy"}
-				</button>
+				<CopyButton
+					copied={copied}
+					onCopy={handleCopy}
+					subject="command"
+					className="shrink-0 px-3 py-2.5"
+				/>
 			</div>
 			<div className="overflow-x-auto px-4 py-3">
 				<pre className="m-0">

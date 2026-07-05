@@ -72,7 +72,9 @@ function ColorToken({
 					/>
 				}
 			/>
-			<span style={{ color: value }}>&apos;{value}&apos;</span>
+			<span style={{ color: value }} className="transition-colors duration-300">
+				&apos;{value}&apos;
+			</span>
 		</TokenShell>
 	);
 }
