@@ -3,64 +3,63 @@
 import { IconPicker, type IconValue } from '../icon-picker'
 import { dim } from '../code-block'
 import { ConfigSnippet, TokenShell, TOKEN_TRIGGER_CLASS, type SnippetBlock } from './config-snippet'
-import { CONFIG_FILES, usePlayground } from './provider'
+import { usePlayground } from './provider'
+import { useSectionEnv } from './use-section-env'
 import { ENVS } from '../../lib/envs'
 
-// production is never styled — the real `icon` option is a single string, not a per-env map,
-// so there's no production row here (mirrors config-editor.tsx's layout)
+// production is never styled — a missing env in the map falls back to tinting, so there's no
+// production row here (mirrors config-editor.tsx's layout)
 const ICON_ENVS = ENVS.filter((env) => env.id !== 'production')
 
 export function IconEditor() {
   const { state, actions } = usePlayground()
-  const file = state.file
-
-  const lead: SnippetBlock = {
-    jsx: () => (
-      <>
-        {dim("const env = process.env.ENV_STYLES_ENV ?? 'development'")}
-        {'\n'}
-        {'const envIcons = '}
-        {'{\n'}
-        {ICON_ENVS.map((env) => (
-          <span key={env.id}>
-            {'  '}
-            {env.id}:{' '}
-            <IconToken
-              value={state.customIcons[env.id] ?? null}
-              label={`${env.id} icon`}
-              onChange={(v) => actions.setIcon(env.id, v)}
-            />
-            {',\n'}
-          </span>
-        ))}
-        {'}'}
-      </>
-    ),
-    source: () =>
-      `const env = process.env.ENV_STYLES_ENV ?? 'development'\nconst envIcons = {\n${ICON_ENVS.filter(
-        (env) => state.customIcons[env.id],
-      )
-        .map((env) => `  ${env.id}: '${state.customIcons[env.id]!.path}',`)
-        .join('\n')}\n}`,
-  }
+  // resolves at fire time: first env with a custom icon, or skip if none is set
+  const sectionRef = useSectionEnv(() => ENVS.find((env) => state.customIcons[env.id])?.id ?? null)
 
   const option: SnippetBlock = {
     jsx: (indent: string) => (
       <>
+        {indent}icon: {'{\n'}
+        {ICON_ENVS.map((env) => {
+          const value = state.customIcons[env.id] ?? null
+          return (
+            <span key={env.id}>
+              {indent}
+              {'  '}
+              {value ? (
+                <>
+                  {env.id}:{' '}
+                  <IconToken value={value} label={`${env.id} icon`} onChange={(v) => actions.setIcon(env.id, v)} />
+                  {',\n'}
+                </>
+              ) : (
+                <>
+                  {dim(`// ${env.id}: `)}
+                  <IconToken value={value} label={`${env.id} icon`} onChange={(v) => actions.setIcon(env.id, v)} />
+                  {' '}
+                  {dim('tinted\n')}
+                </>
+              )}
+            </span>
+          )
+        })}
         {indent}
-        {'icon: envIcons[env],'}
+        {'},'}
       </>
     ),
-    source: (indent: string) => `${indent}icon: envIcons[env],`,
+    source: (indent: string) => {
+      const set = ICON_ENVS.filter((env) => state.customIcons[env.id])
+      if (set.length === 0) return `${indent}icon: {},`
+      return `${indent}icon: {\n${set
+        .map((env) => `${indent}  ${env.id}: '${state.customIcons[env.id]!.path}',`)
+        .join('\n')}\n${indent}},`
+    },
   }
 
   return (
-    <ConfigSnippet
-      label={CONFIG_FILES[file]}
-      lead={lead}
-      option={option}
-      hint="Pick an icon — it's served as-is for that environment, never tinted."
-    />
+    <div ref={sectionRef}>
+      <ConfigSnippet option={option} />
+    </div>
   )
 }
 
@@ -93,7 +92,7 @@ function IconToken({
           )
         }
       />
-      {value ? <span className="text-foreground">&apos;{value.path}&apos;</span> : dim('undefined')}
+      {value && <span className="text-foreground">&apos;{value.path}&apos;</span>}
     </TokenShell>
   )
 }

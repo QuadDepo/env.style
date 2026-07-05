@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { ENVS } from '../../lib/envs'
 import { usePlayground } from './provider'
 
 /** Fake browser chrome; clicking a tab retints this page's real favicon. */
 export function BrowserPreview() {
   const {
-    state: { icons, colors },
+    state: { icons, colors, activeEnv },
+    actions: { setActiveEnv },
   } = usePlayground()
-  const [active, setActive] = useState(ENVS[0])
+  const active = ENVS.find((env) => env.id === activeEnv) ?? ENVS[0]
   const activeColor: string | undefined = colors[active.id]
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export function BrowserPreview() {
                 role="tab"
                 aria-selected={selected}
                 aria-label={env.id}
-                onClick={() => setActive(env)}
+                onClick={() => setActiveEnv(env.id)}
                 className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-t-lg px-2 py-2 font-mono text-xs transition-colors sm:justify-start ${
                   selected
                     ? 'bg-card text-foreground'

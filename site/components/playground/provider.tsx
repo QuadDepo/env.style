@@ -19,10 +19,11 @@ const STATIC_ICONS: Record<string, string> = {
 
 export type CustomIcon = { src: string; path: string }
 
+// development stays null so the default tab still demos live color tinting
 const DEFAULT_CUSTOM_ICONS: Record<string, CustomIcon | null> = {
   development: null,
-  preview: null,
-  staging: null,
+  preview: { src: '/premade/eye.svg', path: './eye.svg' },
+  staging: { src: '/premade/flask.svg', path: './flask.svg' },
   production: null,
 }
 
@@ -36,6 +37,8 @@ interface PlaygroundState {
   icons: Record<string, string>
   file: ConfigFile
   dirty: boolean
+  /** Env id shown in the preview; driven by scroll section and manual tab clicks. */
+  activeEnv: string
 }
 
 interface PlaygroundActions {
@@ -43,6 +46,7 @@ interface PlaygroundActions {
   /** A custom icon is the user's own env styling — used as-is, never tinted (mirrors the `icon` option). */
   setIcon: (id: string, icon: CustomIcon | null) => void
   setFile: (file: ConfigFile) => void
+  setActiveEnv: (id: string) => void
   reset: () => void
 }
 
@@ -64,8 +68,11 @@ export function PlaygroundProvider({ children }: { children: ReactNode }) {
   const [customIcons, setCustomIcons] = useState(DEFAULT_CUSTOM_ICONS)
   const [tintedIcons, setTintedIcons] = useState(STATIC_ICONS)
   const [file, setFile] = useState<ConfigFile>('next')
+  const [activeEnv, setActiveEnv] = useState('development')
   const colorsDirty = Object.keys(DEFAULT_COLORS).some((id) => colors[id] !== DEFAULT_COLORS[id])
-  const iconsDirty = Object.values(customIcons).some((icon) => icon != null)
+  const iconsDirty = Object.keys(DEFAULT_CUSTOM_ICONS).some(
+    (id) => customIcons[id]?.path !== DEFAULT_CUSTOM_ICONS[id]?.path,
+  )
   const dirty = colorsDirty || iconsDirty
 
   useEffect(() => {
@@ -89,6 +96,7 @@ export function PlaygroundProvider({ children }: { children: ReactNode }) {
       setColor: (id, value) => setColors((c) => ({ ...c, [id]: value })),
       setIcon: (id, icon) => setCustomIcons((c) => ({ ...c, [id]: icon })),
       setFile,
+      setActiveEnv,
       reset: () => {
         setColors(DEFAULT_COLORS)
         setCustomIcons(DEFAULT_CUSTOM_ICONS)
@@ -105,8 +113,8 @@ export function PlaygroundProvider({ children }: { children: ReactNode }) {
   )
 
   const value = useMemo<PlaygroundContextValue>(
-    () => ({ state: { colors, customIcons, icons, file, dirty }, actions }),
-    [colors, customIcons, icons, file, dirty, actions],
+    () => ({ state: { colors, customIcons, icons, file, dirty, activeEnv }, actions }),
+    [colors, customIcons, icons, file, dirty, activeEnv, actions],
   )
 
   return <PlaygroundContext value={value}>{children}</PlaygroundContext>
