@@ -59,8 +59,10 @@ used as the `color` key. Any env without a color gets the gray fallback — exce
 - `environment?: string` — force the environment instead of detecting it.
 - `excludeColors?: string[]` — keep pixels near these colors untinted (e.g. white
   backgrounds or marks in an icon that shouldn't shift).
-- `icon?: string` — path to a ready-made icon, served as-is for styled environments.
-  Tinting and `excludeColors` are skipped entirely.
+- `icon?: string | Partial<Record<string, string>>` — path to a ready-made icon, or a
+  per-environment map of paths (e.g. `{ staging: 'staging-icon.png' }`), served as-is
+  for styled environments. Tinting and `excludeColors` are skipped entirely. An env
+  missing from the map falls back to normal tinting.
 
 ```ts
 export default withEnvStyles(nextConfig, {
