@@ -3,3 +3,4 @@ dist/
 .next/
 .tmp/
 .DS_Store
+*.tsbuildinfo
