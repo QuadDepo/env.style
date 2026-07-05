@@ -10,10 +10,12 @@ export interface EnvStylesOptions {
   /** Keep pixels near these colors untinted. */
   excludeColors?: string[]
   /**
-   * Path to a ready-made icon, relative to the project root (absolute also allowed).
-   * Served as-is for styled envs — tinting and excludeColors are skipped entirely.
+   * Path to a ready-made icon, relative to the project root (absolute also allowed),
+   * or a per-environment map of paths, e.g. { staging: 'staging-icon.png' }. Served
+   * as-is for styled envs — tinting and excludeColors are skipped entirely. A missing
+   * env in the map falls back to normal tinting.
    */
-  icon?: string
+  icon?: string | Partial<Record<string, string>>
 }
 
 export const DEFAULT_COLORS: Record<string, string> = {
@@ -42,4 +44,8 @@ export function validateColorOptions(options: EnvStylesOptions): void {
 
 export function resolveColor(env: string, overrides: EnvStylesOptions['color']): string {
   return overrides?.[env] ?? DEFAULT_COLORS[env] ?? FALLBACK_COLOR
+}
+
+export function resolveIcon(env: string, icon: EnvStylesOptions['icon']): string | undefined {
+  return typeof icon === 'string' ? icon : icon?.[env]
 }

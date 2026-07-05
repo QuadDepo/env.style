@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import sharp from 'sharp'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { ResolvedConfig } from 'vite'
 import { envStyle, type EnvStylesOptions } from './vite'
@@ -37,6 +38,20 @@ async function writeSvg() {
   )
 }
 
+async function squarePng(): Promise<Buffer> {
+  return sharp({
+    create: { width: 32, height: 32, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } },
+  })
+    .png()
+    .toBuffer()
+}
+
+async function centerPixel(png: Buffer): Promise<{ r: number; g: number; b: number; a: number }> {
+  const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true })
+  const i = (Math.floor(info.height / 2) * info.width + Math.floor(info.width / 2)) * info.channels
+  return { r: data[i], g: data[i + 1], b: data[i + 2], a: data[i + 3] }
+}
+
 describe('envStyle', () => {
   it('leaves production inert', async () => {
     const p = plugin({ environment: 'production' })
@@ -60,6 +75,28 @@ describe('envStyle', () => {
 
     const injected = await p.transformIndexHtml('<html><head></head><body></body></html>')
     expect(injected).toContain('<link rel="icon" href="/__envstyle/icon.png">')
+  })
+
+  it('serves the per-env icon map entry for the active env', async () => {
+    await writeSvg()
+    await mkdir(path.join(dir, 'public'), { recursive: true })
+    await writeFile(path.join(dir, 'public/dev-icon.png'), await squarePng())
+
+    const p = plugin({ environment: 'development', icon: { development: 'public/dev-icon.png' } })
+    await p.configResolved(config())
+
+    const png = await readFile(path.join(dir, 'public/__envstyle/icon.png'))
+    const center = await centerPixel(png)
+    expect(center).toEqual({ r: 255, g: 255, b: 255, a: 255 })
+  })
+
+  it('falls back to tinting when the icon map has no entry for the active env', async () => {
+    await writeSvg()
+    const p = plugin({ environment: 'development', icon: { staging: 'public/staging-icon.png' } })
+    await p.configResolved(config())
+
+    const png = await readFile(path.join(dir, 'public/__envstyle/icon.png'))
+    expect(png.subarray(0, 4)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
   })
 
   it('throws immediately on invalid colors', () => {

@@ -1,6 +1,6 @@
 import path from 'node:path'
 import type { Plugin } from 'vite'
-import { detectEnv, resolveColor, validateColorOptions, type EnvStylesOptions } from './env'
+import { detectEnv, resolveColor, resolveIcon, validateColorOptions, type EnvStylesOptions } from './env'
 import { customIconPng, findSourceIcons, TINTED_ICON_URL, tintIcon, writeTintedIcon } from './tint'
 
 export type { EnvStylesOptions } from './env'
@@ -23,11 +23,12 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
       if (!active) return
 
       const color = resolveColor(env, options.color)
+      const icon = resolveIcon(env, options.icon)
       const publicDir = path.resolve(config.root, config.publicDir)
       try {
         const icons = findSourceIcons(config.root, viteIconCandidates(config.root, publicDir))
         png =
-          (await customIconPng(config.root, options.icon)) ??
+          (await customIconPng(config.root, icon)) ??
           (await tintIcon(icons[0] ?? null, color, options.excludeColors ?? []))
         await writeTintedIcon(publicDir, png)
       } catch (err) {

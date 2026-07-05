@@ -158,6 +158,33 @@ describe('withEnvStyles', () => {
     expect(ours.map((r: { source: string }) => r.source)).toEqual(['/favicon.ico', '/icon.png'])
   })
 
+  it('serves the per-env icon map entry for the active env', async () => {
+    await mkdir(path.join(dir, 'app'), { recursive: true })
+    await writeFile(path.join(dir, 'app/icon.png'), await squarePng({ r: 255, g: 0, b: 0 }))
+    await writeFile(path.join(dir, 'dev.png'), await squarePng({ r: 255, g: 255, b: 255 }))
+
+    const config = await resolve(
+      withEnvStyles({}, { ...DEV, icon: { development: 'dev.png' }, excludeColors: ['#000'] }),
+    )
+    const custom = await centerPixel(await readFile(path.join(dir, 'public/__envstyle/icon.png')))
+    expect(custom).toEqual({ r: 255, g: 255, b: 255, a: 255 })
+
+    const { beforeFiles: ours } = await beforeFiles(config)
+    expect(ours.map((r: { source: string }) => r.source)).toEqual(['/favicon.ico', '/icon.png'])
+  })
+
+  it('falls back to tinting when the icon map has no entry for the active env', async () => {
+    await mkdir(path.join(dir, 'app'), { recursive: true })
+    await writeFile(path.join(dir, 'app/icon.png'), await squarePng({ r: 255, g: 0, b: 0 }))
+
+    const config = await resolve(withEnvStyles({}, { ...DEV, icon: { staging: 'staging.png' } }))
+    const center = await centerPixel(await readFile(path.join(dir, 'public/__envstyle/icon.png')))
+    expect(center.b).toBeGreaterThan(100) // tinted toward the dev blue, not the (absent) custom icon
+
+    const { beforeFiles: ours } = await beforeFiles(config)
+    expect(ours.map((r: { source: string }) => r.source)).toEqual(['/favicon.ico', '/icon.png'])
+  })
+
   it('warns and falls back to tinting when a custom icon is missing', async () => {
     await mkdir(path.join(dir, 'app'), { recursive: true })
     await writeFile(path.join(dir, 'app/icon.png'), await squarePng({ r: 255, g: 0, b: 0 }))

@@ -1,6 +1,6 @@
 import path from 'node:path'
 import type { NextConfig } from 'next'
-import { detectEnv, resolveColor, validateColorOptions, type EnvStylesOptions } from './env'
+import { detectEnv, resolveColor, resolveIcon, validateColorOptions, type EnvStylesOptions } from './env'
 import { customIconPng, findSourceIcons, iconUrl, TINTED_ICON_URL, tintIcon, writeTintedIcon } from './tint'
 
 export type { EnvStylesOptions } from './env'
@@ -38,10 +38,11 @@ export function withEnvStyles(
   if (options.favicon === false || env === 'production') return nextConfig // zero footprint
 
   const color = resolveColor(env, options.color)
+  const icon = resolveIcon(env, options.icon)
 
   return async (phase, ctx) => {
     const config = typeof nextConfig === 'function' ? await nextConfig(phase, ctx) : nextConfig
-    return decorate(config, color, options.excludeColors ?? [], options.icon)
+    return decorate(config, color, options.excludeColors ?? [], icon)
   }
 }
 
