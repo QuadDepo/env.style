@@ -5,7 +5,7 @@ import { ImageResponse } from "next/og";
 export const runtime = "nodejs";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "env.style — your environments at a glance";
+export const alt = "env.style. your environments at a glance";
 
 // Satori silently falls back to a serif face unless fonts are embedded explicitly.
 const fontDir = path.join(
