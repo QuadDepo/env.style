@@ -77,6 +77,11 @@ export const Route = createRootRoute({
 })
 ```
 
+The Vite plugin injects `globalThis.__ENV_STYLE_FAVICON_ACTIVE__` at build time
+for bundled TanStack Start routes. That define wins there; the runtime fallback
+inside `envStyleLinks()` only runs when the helper is called outside Vite-processed
+code.
+
 ## Default colors
 
 | environment   | color              |
