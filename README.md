@@ -38,6 +38,32 @@ export default defineConfig({
 })
 ```
 
+### TanStack Start
+
+```ts
+// vite.config.ts
+import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+import viteReact from '@vitejs/plugin-react'
+import { envStyle } from 'env.style/vite'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [tanstackStart(), viteReact(), envStyle()],
+})
+```
+
+```tsx
+// src/routes/__root.tsx
+import { HeadContent, createRootRoute } from '@tanstack/react-router'
+import { envStyleLinks } from 'env.style/tanstack-start'
+
+export const Route = createRootRoute({
+  head: () => ({
+    links: envStyleLinks(),
+  }),
+})
+```
+
 ## Default colors
 
 | environment  | color              |
@@ -85,6 +111,8 @@ export default withEnvStyles(nextConfig, {
 - Vite: rewrites `<link rel="icon">` tags in `index.html` to point at the tinted icon
   (injecting one if none exists) and serves it with `no-store` from dev-server
   middleware.
+- TanStack Start: reuse the Vite plugin, then return `envStyleLinks()` from route
+  `head()` so `<HeadContent />` emits the tinted favicon link.
 
 ## Known limits
 
@@ -101,7 +129,8 @@ export default withEnvStyles(nextConfig, {
   gallery to `.tmp/visual/index.html` (needs network; Node >= 22.18 to run the `.ts`
   script directly).
 - Runnable examples: `cd examples/nextjs && pnpm install && pnpm dev` (same for
-  `examples/vite-react`) — the tab favicon should render tinted green.
+  `examples/vite-react` and `examples/tanstack-start`) — the tab favicon should render
+  tinted green.
 
 ## License
 

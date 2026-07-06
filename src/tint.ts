@@ -3,17 +3,15 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import decodeIco from "decode-ico";
 import type { Sharp } from "sharp";
+import { parseHex, type Rgb } from "./color";
+import { OUT_DIR, TINTED_ICON_URL } from "./constants";
 
-export const OUT_DIR = "__envstyle";
-/** Where writeTintedIcon's output is served from, relative to the site root. */
-export const TINTED_ICON_URL = `/${OUT_DIR}/icon.png`;
+export { OUT_DIR, TINTED_ICON_URL };
 
 export const SIZE = 64;
 const TINT_ALPHA = 0.75;
 const TOLERANCE = 48; // redmean distance below which a pixel counts as an excluded color and stays untinted
 const RAMP = 32; // soft edge avoids halos around antialiased pixels
-
-type Rgb = { r: number; g: number; b: number };
 
 export function findSourceIcons(root: string, candidates: string[]): string[] {
 	return candidates
@@ -52,20 +50,7 @@ export function iconUrl(iconPath: string): string {
 	return `/${path.basename(iconPath)}`;
 }
 
-export function parseHex(color: string): Rgb {
-	const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color);
-	if (!m)
-		throw new Error(
-			`env.style: invalid color "${color}" — expected #rgb or #rrggbb`,
-		);
-	let hex = m[1];
-	if (hex.length === 3) hex = [...hex].map((c) => c + c).join("");
-	return {
-		r: parseInt(hex.slice(0, 2), 16),
-		g: parseInt(hex.slice(2, 4), 16),
-		b: parseInt(hex.slice(4, 6), 16),
-	};
-}
+export { parseHex };
 
 /**
  * Tint the icon at iconPath toward the env color (color atop the icon's opaque

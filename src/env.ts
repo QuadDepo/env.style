@@ -1,4 +1,4 @@
-import { parseHex } from "./tint";
+import { parseHex } from "./color";
 
 export interface EnvStylesOptions {
 	/** Kill switch for the whole tool. Default true. */
@@ -28,12 +28,23 @@ export function detectEnv(
 	override: string | undefined,
 	frameworkDefault: () => string,
 ): string {
+	const env = typeof process === "undefined" ? undefined : process.env;
 	return (
 		override ??
-		process.env.ENV_STYLES_ENV ??
-		process.env.VERCEL_TARGET_ENV ??
-		process.env.VERCEL_ENV ??
+		env?.ENV_STYLES_ENV ??
+		env?.VERCEL_TARGET_ENV ??
+		env?.VERCEL_ENV ??
 		frameworkDefault()
+	);
+}
+
+export function isEnvStylesActive(
+	options: EnvStylesOptions,
+	frameworkDefault: () => string,
+): boolean {
+	return (
+		options.enabled !== false &&
+		detectEnv(options.environment, frameworkDefault) !== "production"
 	);
 }
 

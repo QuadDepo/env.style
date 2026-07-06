@@ -3,6 +3,7 @@ import type { Plugin } from "vite";
 import {
 	detectEnv,
 	type EnvStylesOptions,
+	isEnvStylesActive,
 	resolveColor,
 	resolveIcon,
 	validateColorOptions,
@@ -24,6 +25,7 @@ const VITE_ICON_NAMES = [
 	"icon.svg",
 	"icon.png",
 ];
+const ACTIVE_DEFINE = "globalThis.__ENV_STYLE_FAVICON_ACTIVE__";
 
 export function envStyle(options: EnvStylesOptions = {}): Plugin {
 	validateColorOptions(options);
@@ -33,11 +35,22 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 
 	return {
 		name: "env-style",
+		config(_config, env) {
+			return {
+				define: {
+					[ACTIVE_DEFINE]: JSON.stringify(
+						isEnvStylesActive(options, () =>
+							env.command === "serve" ? "development" : "production",
+						),
+					),
+				},
+			};
+		},
 		async configResolved(config) {
 			const env = detectEnv(options.environment, () =>
 				config.command === "serve" ? "development" : "production",
 			);
-			active = options.enabled !== false && env !== "production";
+			active = isEnvStylesActive(options, () => env);
 			if (!active) return;
 
 			const color = resolveColor(env, options.color);

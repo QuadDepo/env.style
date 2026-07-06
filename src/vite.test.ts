@@ -4,12 +4,16 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import type { ResolvedConfig } from "vite";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type EnvStylesOptions, envStyle } from "./vite";
 
 let dir: string;
 beforeEach(async () => {
 	dir = await mkdtemp(path.join(tmpdir(), "envstyle-vite-"));
+});
+
+afterEach(() => {
+	vi.unstubAllEnvs();
 });
 
 type TestPlugin = {
@@ -28,6 +32,23 @@ function config(command: "serve" | "build" = "serve"): ResolvedConfig {
 		command,
 		mode: command === "serve" ? "development" : "production",
 	} as ResolvedConfig;
+}
+
+function activeDefine(
+	options: EnvStylesOptions = {},
+	command: "serve" | "build" = "serve",
+): string {
+	const p = envStyle(options) as unknown as {
+		config(
+			_: unknown,
+			env: { command: "serve" | "build" },
+		): {
+			define: Record<string, string>;
+		};
+	};
+	return p.config({}, { command }).define[
+		"globalThis.__ENV_STYLE_FAVICON_ACTIVE__"
+	];
 }
 
 async function writeSvg() {
@@ -64,6 +85,19 @@ async function centerPixel(
 }
 
 describe("envStyle", () => {
+	it("defines the browser active flag from the same env rules", () => {
+		expect(activeDefine({}, "serve")).toBe("true");
+		expect(activeDefine({}, "build")).toBe("false");
+
+		vi.stubEnv("ENV_STYLES_ENV", "preview");
+		expect(activeDefine({}, "build")).toBe("true");
+
+		vi.unstubAllEnvs();
+		vi.stubEnv("VERCEL_TARGET_ENV", "production");
+		vi.stubEnv("VERCEL_ENV", "preview");
+		expect(activeDefine({}, "build")).toBe("false");
+	});
+
 	it("leaves production inert", async () => {
 		const p = plugin({ environment: "production" });
 		await p.configResolved(config("build"));
