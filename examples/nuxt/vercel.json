@@ -1,0 +1,5 @@
+{
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"ignoreCommand": "test \"$VERCEL_GIT_COMMIT_REF\" != preview && git diff --quiet HEAD^ HEAD -- ../../src ../../scripts ../../package.json .",
+	"installCommand": "pnpm --dir ../.. install --frozen-lockfile && pnpm --dir ../.. build && pnpm install --frozen-lockfile"
+}
