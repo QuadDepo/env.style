@@ -4,12 +4,11 @@ import path from "node:path";
 import decodeIco from "decode-ico";
 import type { Sharp } from "sharp";
 import { parseHex, type Rgb } from "./color";
-import { OUT_DIR, TINTED_ICON_URL } from "./constants";
+import { DEFAULT_COLOR_OPACITY, OUT_DIR, TINTED_ICON_URL } from "./constants";
 
 export { OUT_DIR, TINTED_ICON_URL };
 
 export const SIZE = 64;
-const TINT_ALPHA = 0.75;
 const TOLERANCE = 48; // redmean distance below which a pixel counts as an excluded color and stays untinted
 const RAMP = 32; // soft edge avoids halos around antialiased pixels
 
@@ -60,7 +59,9 @@ export async function tintIcon(
 	iconPath: string | null,
 	color: string,
 	excludeColors: string[] = [],
+	colorOpacity = DEFAULT_COLOR_OPACITY,
 ): Promise<Buffer> {
+	assertColorOpacity(colorOpacity);
 	const rgba = parseHex(color);
 	const { default: sharp } = await import("sharp");
 	const base = iconPath ? await toPngBase(iconPath) : null;
@@ -70,13 +71,18 @@ export async function tintIcon(
 		return sharp(Buffer.from(svg)).png().toBuffer();
 	}
 	if (excludeColors.length > 0)
-		return tintWithExcludeMask(base, rgba, excludeColors.map(parseHex));
+		return tintWithExcludeMask(
+			base,
+			rgba,
+			excludeColors.map(parseHex),
+			colorOpacity,
+		);
 	const overlay = await sharp({
 		create: {
 			width: SIZE,
 			height: SIZE,
 			channels: 4,
-			background: { ...rgba, alpha: TINT_ALPHA },
+			background: { ...rgba, alpha: colorOpacity },
 		},
 	})
 		.png()
@@ -85,6 +91,12 @@ export async function tintIcon(
 		.composite([{ input: overlay, blend: "atop" }])
 		.png()
 		.toBuffer();
+}
+
+function assertColorOpacity(colorOpacity: number): void {
+	if (!Number.isFinite(colorOpacity) || colorOpacity < 0 || colorOpacity > 1) {
+		throw new Error("env.style: colorOpacity must be between 0 and 1");
+	}
 }
 
 function redmeanDistance(a: Rgb, b: Rgb): number {
@@ -108,6 +120,7 @@ async function tintWithExcludeMask(
 	base: Buffer,
 	tint: Rgb,
 	excludeColors: Rgb[],
+	colorOpacity: number,
 ): Promise<Buffer> {
 	const { default: sharp } = await import("sharp");
 	const { data, info } = await sharp(base)
@@ -123,7 +136,7 @@ async function tintWithExcludeMask(
 		for (const excluded of excludeColors)
 			distance = Math.min(distance, redmeanDistance(original, excluded));
 		const alpha =
-			TINT_ALPHA * smoothstep(TOLERANCE, TOLERANCE + RAMP, distance);
+			colorOpacity * smoothstep(TOLERANCE, TOLERANCE + RAMP, distance);
 		out[i] = Math.round(tint.r * alpha + original.r * (1 - alpha));
 		out[i + 1] = Math.round(tint.g * alpha + original.g * (1 - alpha));
 		out[i + 2] = Math.round(tint.b * alpha + original.b * (1 - alpha));

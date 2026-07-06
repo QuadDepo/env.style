@@ -4,6 +4,7 @@ import {
 	detectEnv,
 	type EnvStylesOptions,
 	resolveColor,
+	resolveColorOpacity,
 	resolveIcon,
 	validateColorOptions,
 } from "./env";
@@ -55,13 +56,20 @@ export function withEnvStyles(
 
 	const color = resolveColor(env, options.color);
 	const icon = resolveIcon(env, options.icon);
+	const colorOpacity = resolveColorOpacity(options);
 
 	return async (phase, ctx) => {
 		const config =
 			typeof nextConfig === "function"
 				? await nextConfig(phase, ctx)
 				: nextConfig;
-		return decorate(config, color, options.excludeColors ?? [], icon);
+		return decorate(
+			config,
+			color,
+			options.excludeColors ?? [],
+			colorOpacity,
+			icon,
+		);
 	};
 }
 
@@ -69,6 +77,7 @@ async function decorate(
 	config: NextConfig,
 	color: string,
 	excludeColors: string[],
+	colorOpacity: number,
 	customIcon?: string,
 ): Promise<NextConfig> {
 	const root = process.cwd();
@@ -78,7 +87,7 @@ async function decorate(
 	try {
 		const png =
 			(await customIconPng(root, customIcon)) ??
-			(await tintIcon(icons[0] ?? null, color, excludeColors));
+			(await tintIcon(icons[0] ?? null, color, excludeColors, colorOpacity));
 		await writeTintedIcon(path.join(root, "public"), png);
 	} catch (err) {
 		console.warn(
