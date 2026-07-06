@@ -35,7 +35,9 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 		name: "env-style",
 		async configResolved(config) {
 			const env = detectEnv(options.environment, () =>
-				config.command === "serve" ? "development" : "production",
+				config.mode === "production" || config.command !== "serve"
+					? "production"
+					: "development",
 			);
 			active = options.enabled !== false && env !== "production";
 			if (!active) return;
