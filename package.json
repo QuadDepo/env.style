@@ -1,96 +1,16 @@
 {
-	"name": "env.style",
-	"version": "1.0.1",
+	"name": "env.style-monorepo",
+	"private": true,
 	"packageManager": "pnpm@10.19.0",
-	"description": "Environment-tinted favicons for Next.js and Vite — see at a glance whether a tab is dev, preview, staging, or production.",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/QuadDepo/env.style.git"
-	},
-	"homepage": "https://github.com/QuadDepo/env.style#readme",
-	"bugs": "https://github.com/QuadDepo/env.style/issues",
-	"type": "module",
-	"exports": {
-		".": {
-			"import": {
-				"types": "./dist/index.d.ts",
-				"default": "./dist/index.js"
-			},
-			"require": {
-				"types": "./dist/index.d.cts",
-				"default": "./dist/index.cjs"
-			}
-		},
-		"./vite": {
-			"import": {
-				"types": "./dist/vite.d.ts",
-				"default": "./dist/vite.js"
-			},
-			"require": {
-				"types": "./dist/vite.d.cts",
-				"default": "./dist/vite.cjs"
-			}
-		}
-	},
-	"main": "./dist/index.cjs",
-	"module": "./dist/index.js",
-	"types": "./dist/index.d.ts",
-	"files": [
-		"dist"
-	],
-	"sideEffects": false,
-	"engines": {
-		"node": ">=18.17.0"
-	},
 	"scripts": {
-		"build": "tsup src/index.ts src/vite.ts --format esm,cjs --dts",
-		"prepublishOnly": "pnpm build",
-		"test:visual": "node scripts/visual-test.ts",
-		"typecheck": "tsc --noEmit",
-		"test": "vitest run",
+		"build": "pnpm --filter env.style build",
+		"typecheck": "pnpm -r typecheck",
+		"test": "pnpm --filter env.style test",
 		"format": "biome format --write .",
-		"lint": "biome check ."
-	},
-	"keywords": [
-		"nextjs",
-		"vite",
-		"vite-plugin",
-		"favicon",
-		"environment",
-		"dx",
-		"staging",
-		"preview"
-	],
-	"dependencies": {
-		"decode-ico": "^0.4.1",
-		"sharp": "^0.35.3"
-	},
-	"peerDependencies": {
-		"next": ">=13",
-		"vite": ">=5"
-	},
-	"peerDependenciesMeta": {
-		"next": {
-			"optional": true
-		},
-		"vite": {
-			"optional": true
-		}
-	},
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"esbuild",
-			"sharp"
-		]
+		"lint": "biome check .",
+		"test:visual": "node scripts/visual-test.ts"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.2",
-		"@types/node": "^26.1.0",
-		"next": "^16.2.10",
-		"tsup": "^8.5.1",
-		"typescript": "^5.9.3",
-		"vite": "^8.1.3",
-		"vitest": "^4.1.9"
+		"@biomejs/biome": "^2.5.2"
 	}
 }

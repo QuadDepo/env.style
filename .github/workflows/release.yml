@@ -12,6 +12,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     environment: release # gated by required-reviewer approval; npm trusted publisher is bound to this env
+    defaults:
+      run:
+        working-directory: packages/env.style
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
