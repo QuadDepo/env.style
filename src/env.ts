@@ -41,20 +41,19 @@ export function detectEnv(
 	);
 }
 
+export function assertColorOpacity(colorOpacity: number): void {
+	if (!Number.isFinite(colorOpacity) || colorOpacity < 0 || colorOpacity > 1) {
+		throw new Error("env.style: colorOpacity must be between 0 and 1");
+	}
+}
+
 /** Fail loudly on a bad config value, not mid-build. */
 export function validateColorOptions(options: EnvStylesOptions): void {
 	for (const value of Object.values(options.color ?? {})) {
 		if (value !== undefined) parseHex(value);
 	}
 	for (const value of options.excludeColors ?? []) parseHex(value);
-	if (
-		options.colorOpacity !== undefined &&
-		(!Number.isFinite(options.colorOpacity) ||
-			options.colorOpacity < 0 ||
-			options.colorOpacity > 1)
-	) {
-		throw new Error("env.style: colorOpacity must be between 0 and 1");
-	}
+	if (options.colorOpacity !== undefined) assertColorOpacity(options.colorOpacity);
 }
 
 export function resolveColor(

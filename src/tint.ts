@@ -5,6 +5,7 @@ import decodeIco from "decode-ico";
 import type { Sharp } from "sharp";
 import { parseHex, type Rgb } from "./color";
 import { DEFAULT_COLOR_OPACITY, OUT_DIR, TINTED_ICON_URL } from "./constants";
+import { assertColorOpacity } from "./env";
 
 export { OUT_DIR, TINTED_ICON_URL };
 
@@ -91,12 +92,6 @@ export async function tintIcon(
 		.composite([{ input: overlay, blend: "atop" }])
 		.png()
 		.toBuffer();
-}
-
-function assertColorOpacity(colorOpacity: number): void {
-	if (!Number.isFinite(colorOpacity) || colorOpacity < 0 || colorOpacity > 1) {
-		throw new Error("env.style: colorOpacity must be between 0 and 1");
-	}
 }
 
 function redmeanDistance(a: Rgb, b: Rgb): number {
