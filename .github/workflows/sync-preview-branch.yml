@@ -1,11 +1,22 @@
 # Mirrors main into the long-lived `preview` branch so every Vercel project
 # keeps a stable preview-environment deployment (VERCEL_ENV=preview) alongside
 # production — the amber-tinted counterpart to each production URL.
+#
+# The sync adds an empty commit on top of main: Vercel skips pushes whose
+# commit SHA it already deployed, so mirroring the SHA as-is would never
+# deploy. The vercel.json ignoreCommands always build the `preview` ref to
+# compensate for the empty diff.
 name: Sync preview branch
 
 on:
   push:
     branches: [main]
+    paths:
+      - "src/**"
+      - "scripts/**"
+      - "package.json"
+      - "site/**"
+      - "examples/**"
 
 permissions:
   contents: write
@@ -17,4 +28,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: git push --force origin HEAD:preview
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: sync preview from ${GITHUB_SHA::7}"
+          git push --force origin HEAD:preview
