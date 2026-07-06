@@ -38,16 +38,6 @@ export function detectEnv(
 	);
 }
 
-export function isEnvStylesActive(
-	options: EnvStylesOptions,
-	frameworkDefault: () => string,
-): boolean {
-	return (
-		options.enabled !== false &&
-		detectEnv(options.environment, frameworkDefault) !== "production"
-	);
-}
-
 /** Fail loudly on a bad config value, not mid-build. */
 export function validateColorOptions(options: EnvStylesOptions): void {
 	for (const value of Object.values(options.color ?? {})) {

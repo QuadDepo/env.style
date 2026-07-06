@@ -5,4 +5,5 @@ dist/
 .DS_Store
 *.tsbuildinfo
 .pnpm-store/
+.vercel/
 next-env.d.ts

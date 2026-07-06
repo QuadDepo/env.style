@@ -3,7 +3,6 @@ import type { Plugin } from "vite";
 import {
 	detectEnv,
 	type EnvStylesOptions,
-	isEnvStylesActive,
 	resolveColor,
 	resolveIcon,
 	validateColorOptions,
@@ -27,6 +26,16 @@ const VITE_ICON_NAMES = [
 ];
 const ACTIVE_DEFINE = "globalThis.__ENV_STYLE_FAVICON_ACTIVE__";
 
+function viteDefaultEnv(mode: string, command: string): string {
+	return mode === "production" || command !== "serve"
+		? "production"
+		: "development";
+}
+
+function isActive(options: EnvStylesOptions, env: string): boolean {
+	return options.enabled !== false && env !== "production";
+}
+
 export function envStyle(options: EnvStylesOptions = {}): Plugin {
 	validateColorOptions(options);
 
@@ -39,8 +48,11 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 			return {
 				define: {
 					[ACTIVE_DEFINE]: JSON.stringify(
-						isEnvStylesActive(options, () =>
-							env.command === "serve" ? "development" : "production",
+						isActive(
+							options,
+							detectEnv(options.environment, () =>
+								viteDefaultEnv(env.mode, env.command),
+							),
 						),
 					),
 				},
@@ -48,9 +60,9 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 		},
 		async configResolved(config) {
 			const env = detectEnv(options.environment, () =>
-				config.command === "serve" ? "development" : "production",
+				viteDefaultEnv(config.mode, config.command),
 			);
-			active = isEnvStylesActive(options, () => env);
+			active = isActive(options, env);
 			if (!active) return;
 
 			const color = resolveColor(env, options.color);

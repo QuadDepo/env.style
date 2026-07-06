@@ -1,9 +1,22 @@
-# env.style 🎨
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/header/transparent.svg?title=env.style&subtitle=Environment-tinted+favicons+for+Next.js+and+Vite&align=left&border=false&font=geist-mono&mode=dark" />
+  <img alt="env.style — Environment-tinted favicons for Next.js and Vite" src="https://shieldcn.dev/header/transparent.svg?title=env.style&subtitle=Environment-tinted+favicons+for+Next.js+and+Vite&align=left&border=false&font=geist-mono&mode=light" />
+</picture>
 
-Five browser tabs, all the same favicon — dev, preview, production — and you keep
-editing the wrong one. `env.style` tints your existing favicon per environment at build
-time, Vercel-style: same mark, different color.
-Production is never touched.
+<p align="center">
+  <a href="https://github.com/QuadDepo/env.style/stargazers"><img alt="GitHub stars" src="https://shieldcn.dev/github/stars/QuadDepo/env.style.svg?variant=secondary&size=xs" /></a>
+  <a href="https://github.com/QuadDepo/env.style/blob/main/LICENSE"><img alt="License" src="https://shieldcn.dev/github/license/QuadDepo/env.style.svg?variant=secondary&size=xs" /></a>
+  <a href="https://github.com/QuadDepo/env.style/commits/main"><img alt="Last commit" src="https://shieldcn.dev/github/last-commit/QuadDepo/env.style.svg?variant=secondary&size=xs" /></a>
+  <a href="https://env.style"><img alt="Website" src="https://shieldcn.dev/badge/visit-env.style.svg?variant=secondary&size=xs&logo=lu:Globe&color=000000" /></a>
+</p>
+
+Five browser tabs, all the same favicon: dev, preview, production.. and you keep
+editing the wrong one. **env.style** tints your existing favicon per environment at build
+time, Vercel-style: same mark, different color. Production is never touched.
+
+<p align="center">
+  <strong><a href="https://env.style">env.style</a> · <a href="./examples">Examples</a></strong>
+</p>
 
 ## Install
 
@@ -66,12 +79,12 @@ export const Route = createRootRoute({
 
 ## Default colors
 
-| environment  | color              |
-|--------------|--------------------|
-| development  | `#3b82f6` blue     |
-| preview      | `#f59e0b` amber    |
-| anything else| `#6b7280` gray     |
-| production   | never touched      |
+| environment   | color              |
+|---------------|--------------------|
+| development   | `#3b82f6` blue     |
+| preview       | `#f59e0b` amber    |
+| anything else | `#6b7280` gray     |
+| production    | never touched      |
 
 Environment names are plain strings: whatever detection yields (e.g.
 `ENV_STYLES_ENV=staging`, or a Vercel custom environment via `VERCEL_TARGET_ENV`) is
@@ -131,6 +144,18 @@ export default withEnvStyles(nextConfig, {
 - Runnable examples: `cd examples/nextjs && pnpm install && pnpm dev` (same for
   `examples/vite-react` and `examples/tanstack-start`) — the tab favicon should render
   tinted green.
+
+## Stargazers
+
+<a href="https://github.com/QuadDepo/env.style/stargazers">
+  <img alt="Star history" src="https://shieldcn.dev/chart/github/stars/QuadDepo/env.style.svg?bg=transparent&border=false&height=120" />
+</a>
+
+## Contributors
+
+<a href="https://github.com/QuadDepo/env.style/graphs/contributors">
+  <img alt="Contributors" src="https://shieldcn.dev/contributors/QuadDepo/env.style.svg?limit=12&theme=zinc&bg=transparent&border=false&title=false" />
+</a>
 
 ## License
 

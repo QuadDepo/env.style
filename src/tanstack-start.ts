@@ -1,7 +1,7 @@
 import { TINTED_ICON_URL } from "./constants";
 import {
+	detectEnv,
 	type EnvStylesOptions,
-	isEnvStylesActive,
 	validateColorOptions,
 } from "./env";
 
@@ -17,14 +17,14 @@ export function envStyleLinks(options: EnvStylesOptions = {}): EnvStyleLink[] {
 	const definedActive = (
 		globalThis as { __ENV_STYLE_FAVICON_ACTIVE__?: boolean }
 	).__ENV_STYLE_FAVICON_ACTIVE__;
+	const runtimeEnv = detectEnv(options.environment, () =>
+		typeof process !== "undefined" && process.env?.NODE_ENV === "development"
+			? "development"
+			: "production",
+	);
 	const active =
 		typeof definedActive === "boolean"
 			? definedActive
-			: isEnvStylesActive(options, () =>
-					typeof process !== "undefined" &&
-					process.env?.NODE_ENV === "development"
-						? "development"
-						: "production",
-				);
+			: options.enabled !== false && runtimeEnv !== "production";
 	return active ? [{ rel: "icon", href: TINTED_ICON_URL }] : [];
 }
