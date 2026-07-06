@@ -2,10 +2,11 @@
 # keeps a stable preview-environment deployment (VERCEL_ENV=preview) alongside
 # production — the amber-tinted counterpart to each production URL.
 #
-# The sync adds an empty commit on top of main: Vercel skips pushes whose
-# commit SHA it already deployed, so mirroring the SHA as-is would never
-# deploy. The vercel.json ignoreCommands always build the `preview` ref to
-# compensate for the empty diff.
+# The sync commit writes a .preview-stamp file into each project whose inputs
+# changed in this push (shared inputs stamp every project). The stamp gives
+# Vercel a fresh commit SHA (it skips SHAs it already deployed) and makes the
+# per-project ignoreCommand `git diff HEAD^ HEAD` see a change for exactly the
+# affected projects — so a site-only push no longer rebuilds the examples.
 name: Sync preview branch
 
 on:
@@ -31,5 +32,22 @@ jobs:
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit --allow-empty -m "chore: sync preview from ${GITHUB_SHA::7}"
+
+          if git cat-file -e "${{ github.event.before }}" 2>/dev/null; then
+            CHANGED=$(git diff --name-only "${{ github.event.before }}" "$GITHUB_SHA")
+          else
+            CHANGED=$(git ls-files) # unknown base (force push / new branch): stamp everything
+          fi
+
+          stamp() { echo "$GITHUB_SHA" > "$1/.preview-stamp"; git add -f "$1/.preview-stamp"; }
+          if echo "$CHANGED" | grep -qE '^(src/|scripts/|package\.json$)'; then
+            for p in site examples/*; do [ -d "$p" ] && stamp "$p"; done
+          else
+            if echo "$CHANGED" | grep -q '^site/'; then stamp site; fi
+            for p in examples/*; do
+              if echo "$CHANGED" | grep -q "^$p/"; then stamp "$p"; fi
+            done
+          fi
+
+          git commit -m "chore: sync preview from ${GITHUB_SHA::7}" || exit 0
           git push --force origin HEAD:preview
