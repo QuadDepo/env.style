@@ -7,7 +7,7 @@
   <a href="https://www.npmjs.com/package/env.style"><img alt="npm version" src="https://shieldcn.dev/npm/v/env.style.svg?variant=branded&size=xs" /></a>
   <a href="https://github.com/QuadDepo/env.style/stargazers"><img alt="GitHub stars" src="https://shieldcn.dev/github/stars/QuadDepo/env.style.svg?variant=branded&size=xs" /></a>
   <a href="https://github.com/QuadDepo/env.style/blob/main/LICENSE"><img alt="License" src="https://shieldcn.dev/github/license/QuadDepo/env.style.svg?variant=branded&size=xs" /></a>
-  <a href="https://github.com/QuadDepo/env.style/actions"><img alt="CI" src="https://shieldcn.dev/github/actions/workflow/status/QuadDepo/env.style/ci.yml?variant=branded&size=xs&label=CI" /></a>
+  <a href="https://github.com/QuadDepo/env.style/actions"><img alt="CI" src="https://www.shieldcn.dev/github/ci/QuadDepo/env.style.svg?variant=branded&size=xs" /></a>
 </p>
 
 Five browser tabs, all the same favicon: dev, preview, production.. and you keep
