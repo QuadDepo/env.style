@@ -4,7 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev --host 127.0.0.1 --port 3125",
-		"build": "ENV_STYLES_ENV=development vite build",
+		"build": "vite build",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
