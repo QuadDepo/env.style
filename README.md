@@ -116,12 +116,6 @@ export default withEnvStyles(nextConfig, {
 - Runnable examples: `cd examples/nextjs && pnpm install && pnpm dev` (same for
   `examples/vite-react`) — the tab favicon should render tinted green.
 
-## Stargazers
-
-<a href="https://github.com/QuadDepo/env.style/stargazers">
-  <img alt="Star history" src="https://shieldcn.dev/chart/github/stars/QuadDepo/env.style.svg?bg=transparent&border=false&height=120" />
-</a>
-
 ## Contributors
 
 <a href="https://github.com/QuadDepo/env.style/graphs/contributors">
