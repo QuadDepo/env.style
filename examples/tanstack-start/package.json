@@ -5,6 +5,7 @@
 	"scripts": {
 		"dev": "vite dev --host 127.0.0.1 --port 3125",
 		"build": "vite build",
+		"preview": "vite preview",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
