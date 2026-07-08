@@ -46,7 +46,7 @@ how it works.
 
 ## Development
 
-See [DEVELOPMENT.md](./packages/env.style/DEVELOPMENT.md) for setup, repo structure, and
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for setup, repo structure, and
 how to run examples.
 
 ## Stargazers
