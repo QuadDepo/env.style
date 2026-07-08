@@ -21,12 +21,15 @@ function plugin(options: EnvStylesOptions = {}): TestPlugin {
 	return envStyle(options) as unknown as TestPlugin;
 }
 
-function config(command: "serve" | "build" = "serve"): ResolvedConfig {
+function config(
+	command: "serve" | "build" = "serve",
+	mode = command === "serve" ? "development" : "production",
+): ResolvedConfig {
 	return {
 		root: dir,
 		publicDir: path.join(dir, "public"),
 		command,
-		mode: command === "serve" ? "development" : "production",
+		mode,
 	} as ResolvedConfig;
 }
 
@@ -67,6 +70,17 @@ describe("envStyle", () => {
 	it("leaves production inert", async () => {
 		const p = plugin({ environment: "production" });
 		await p.configResolved(config("build"));
+		const html =
+			'<html><head><link rel="icon" href="/favicon.svg"></head><body></body></html>';
+		expect(await p.transformIndexHtml(html)).toBe(html);
+		expect(existsSync(path.join(dir, "public/__envstyle/icon.png"))).toBe(
+			false,
+		);
+	});
+
+	it("leaves production mode inert when a framework reports serve", async () => {
+		const p = plugin();
+		await p.configResolved(config("serve", "production"));
 		const html =
 			'<html><head><link rel="icon" href="/favicon.svg"></head><body></body></html>';
 		expect(await p.transformIndexHtml(html)).toBe(html);
