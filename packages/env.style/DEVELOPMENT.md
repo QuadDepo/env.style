@@ -5,7 +5,7 @@
 ```
 env.style/
 ├── packages/env.style/    # The npm package (source, tests, build config)
-├── site/                  # Documentation website (Next.js + Tailwind)
+├── apps/web/              # Documentation website (Next.js + Tailwind)
 ├── examples/              # Runnable example projects
 │   ├── nextjs/
 │   └── vite-react/
