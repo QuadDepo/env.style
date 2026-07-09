@@ -13,8 +13,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "src/**"
-      - "scripts/**"
+      - "packages/env.style/**"
       - "package.json"
       - "apps/web/**"
       - "examples/**"
@@ -48,7 +47,7 @@ jobs:
           fi
 
           stamp() { echo "$GITHUB_SHA" > "$1/.preview-stamp"; git add -f "$1/.preview-stamp"; }
-          if echo "$CHANGED" | grep -qE '^(src/|scripts/|package\.json$)'; then
+          if echo "$CHANGED" | grep -qE '^(packages/env\.style/|package\.json$)'; then
             for p in apps/web examples/*; do [ -d "$p" ] && stamp "$p"; done
           else
             if echo "$CHANGED" | grep -q '^apps/web/'; then stamp apps/web; fi
