@@ -8,6 +8,7 @@ env.style/
 ├── apps/web/              # Documentation website (Next.js + Tailwind)
 ├── examples/              # Runnable example projects
 │   ├── nextjs/
+│   ├── tanstack-start/
 │   └── vite-react/
 ├── .github/workflows/     # CI + Release pipelines
 ├── pnpm-workspace.yaml    # Workspace config
@@ -45,6 +46,7 @@ Runnable example projects are in the `examples/` directory:
 
 ```bash
 cd examples/nextjs && pnpm install && pnpm dev
+cd examples/tanstack-start && pnpm install && pnpm dev
 cd examples/vite-react && pnpm install && pnpm dev
 ```
 
