@@ -3,7 +3,7 @@
 // after changing favicon.svg: `pnpm gen-tints` (Node >= 22.18).
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { tintIcon, toPngBase } from "../../packages/env.style/src/tint.ts";
+import { tintIcon, toPngBase } from "../../../packages/env.style/src/tint.ts";
 
 // ponytail: hexes copied from packages/env.style/src/env.ts DEFAULT_COLORS/FALLBACK_COLOR — env.ts
 // can't be imported here (extensionless './tint' import breaks Node type stripping)
