@@ -87,12 +87,6 @@
 			"optional": true
 		}
 	},
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"esbuild",
-			"sharp"
-		]
-	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.2",
 		"@types/node": "catalog:",
