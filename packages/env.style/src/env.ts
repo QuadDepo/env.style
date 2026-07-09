@@ -24,6 +24,7 @@ export interface EnvStylesOptions {
 export const DEFAULT_COLORS: Record<string, string> = {
 	development: "#3b82f6",
 	preview: "#f59e0b",
+	staging: "#f6821f",
 };
 export const FALLBACK_COLOR = "#6b7280";
 
@@ -35,10 +36,59 @@ export function detectEnv(
 	return (
 		override ??
 		env?.ENV_STYLES_ENV ??
+		// Vercel (already standard: production, preview, development)
 		env?.VERCEL_TARGET_ENV ??
 		env?.VERCEL_ENV ??
+		// Netlify
+		normalizeNetlify(env?.CONTEXT) ??
+		// Cloudflare Pages
+		env?.CLOUDFLARE_ENV ??
+		// Railway
+		normalizeRailway(env?.RAILWAY_ENVIRONMENT) ??
+		// Render
+		normalizeRender(env?.RENDER) ??
+		// Deno Deploy
+		normalizeDenoDeploy(env?.DENO_DEPLOY) ??
+		// Fly.io (user-defined, no normalization)
+		env?.FLY_ENV ??
+		// Heroku
+		normalizeHeroku(env?.DYNO) ??
+		// Coolify (branch name, no normalization)
+		env?.COOLIFY_BRANCH ??
+		// Zerops (user-defined, no normalization)
+		env?.ZEROPS_ENV ??
+		// Sevalla (user-defined, no normalization)
+		env?.SEVALLA_ENV ??
+		// DigitalOcean App Platform (user-defined, no normalization)
+		env?.DO_ENV ??
 		frameworkDefault()
 	);
+}
+
+function normalizeNetlify(context: string | undefined): string | undefined {
+	if (!context) return undefined;
+	if (context === "deploy-preview") return "preview";
+	if (context === "branch-deploy" || context === "dev") return "development";
+	return undefined;
+}
+
+function normalizeRailway(envName: string | undefined): string | undefined {
+	if (!envName) return undefined;
+	if (envName === "staging") return "staging";
+	if (envName.startsWith("pr-")) return "preview";
+	return undefined;
+}
+
+function normalizeRender(render: string | undefined): string | undefined {
+	return render ? "preview" : undefined;
+}
+
+function normalizeDenoDeploy(deploy: string | undefined): string | undefined {
+	return deploy ? "preview" : undefined;
+}
+
+function normalizeHeroku(dyno: string | undefined): string | undefined {
+	return dyno ? "preview" : undefined;
 }
 
 export function assertColorOpacity(colorOpacity: number): void {

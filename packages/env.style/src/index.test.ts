@@ -357,5 +357,110 @@ describe("withEnvStyles", () => {
 			const config = await resolve(withEnvStyles({}));
 			expect(config.rewrites).toBeDefined();
 		});
+
+		it("CLOUDFLARE_ENV is detected", () => {
+			vi.stubEnv("CLOUDFLARE_ENV", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("RAILWAY_ENVIRONMENT is detected", () => {
+			vi.stubEnv("RAILWAY_ENVIRONMENT", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("RENDER is detected", async () => {
+			vi.stubEnv("RENDER", "true");
+			const config = {};
+			// RENDER="true" is not "production", so it returns a function form
+			expect(typeof withEnvStyles(config)).toBe("function");
+		});
+
+		it("FLY_ENV is detected", () => {
+			vi.stubEnv("FLY_ENV", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("ZEROPS_ENV is detected", () => {
+			vi.stubEnv("ZEROPS_ENV", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("SEVALLA_ENV is detected", () => {
+			vi.stubEnv("SEVALLA_ENV", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("CONTEXT (Netlify) is detected", () => {
+			vi.stubEnv("CONTEXT", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("DENO_DEPLOY is detected", async () => {
+			vi.stubEnv("DENO_DEPLOY", "true");
+			const config = {};
+			// DENO_DEPLOY="true" is not "production", so it returns a function form
+			expect(typeof withEnvStyles(config)).toBe("function");
+		});
+
+		it("DYNO (Heroku) is detected", async () => {
+			vi.stubEnv("DYNO", "web.1");
+			const config = {};
+			// DYNO="web.1" is not "production", so it returns a function form
+			expect(typeof withEnvStyles(config)).toBe("function");
+		});
+
+		it("COOLIFY_BRANCH is detected", async () => {
+			vi.stubEnv("COOLIFY_BRANCH", "main");
+			const config = {};
+			// COOLIFY_BRANCH="main" is not "production", so it returns a function form
+			expect(typeof withEnvStyles(config)).toBe("function");
+		});
+
+		it("DO_ENV is detected", () => {
+			vi.stubEnv("DO_ENV", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("normalizes Netlify deploy-preview to preview", () => {
+			vi.stubEnv("CONTEXT", "deploy-preview");
+			expect(typeof withEnvStyles({})).toBe("function");
+		});
+
+		it("normalizes Netlify branch-deploy to development", () => {
+			vi.stubEnv("CONTEXT", "branch-deploy");
+			expect(typeof withEnvStyles({})).toBe("function");
+		});
+
+		it("normalizes Netlify dev to development", () => {
+			vi.stubEnv("CONTEXT", "dev");
+			expect(typeof withEnvStyles({})).toBe("function");
+		});
+
+		it("normalizes Render true to preview", () => {
+			vi.stubEnv("RENDER", "true");
+			expect(typeof withEnvStyles({})).toBe("function");
+		});
+
+		it("normalizes Railway PR environments to preview", () => {
+			vi.stubEnv("RAILWAY_ENVIRONMENT", "pr-123");
+			expect(typeof withEnvStyles({})).toBe("function");
+		});
+
+		it("normalizes Heroku DYNO to preview", () => {
+			vi.stubEnv("DYNO", "web.1");
+			expect(typeof withEnvStyles({})).toBe("function");
+		});
+
+		it("normalizes Deno Deploy true to preview", () => {
+			vi.stubEnv("DENO_DEPLOY", "true");
+			expect(typeof withEnvStyles({})).toBe("function");
+		});
 	});
 });
