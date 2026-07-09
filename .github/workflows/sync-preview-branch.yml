@@ -13,10 +13,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "src/**"
-      - "scripts/**"
+      - "packages/env.style/**"
       - "package.json"
-      - "site/**"
+      - "apps/web/**"
       - "examples/**"
 
 permissions:
@@ -48,10 +47,10 @@ jobs:
           fi
 
           stamp() { echo "$GITHUB_SHA" > "$1/.preview-stamp"; git add -f "$1/.preview-stamp"; }
-          if echo "$CHANGED" | grep -qE '^(src/|scripts/|package\.json$)'; then
-            for p in site examples/*; do [ -d "$p" ] && stamp "$p"; done
+          if echo "$CHANGED" | grep -qE '^(packages/env\.style/|package\.json$)'; then
+            for p in apps/web examples/*; do [ -d "$p" ] && stamp "$p"; done
           else
-            if echo "$CHANGED" | grep -q '^site/'; then stamp site; fi
+            if echo "$CHANGED" | grep -q '^apps/web/'; then stamp apps/web; fi
             for p in examples/*; do
               if echo "$CHANGED" | grep -q "^$p/"; then stamp "$p"; fi
             done

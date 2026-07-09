@@ -10,11 +10,12 @@
 			"**",
 			"!dist",
 			"!node_modules",
-			"!site/.next",
-			"!site/public",
+			"!apps/web/.next",
+			"!apps/web/public",
 			"!pnpm-lock.yaml",
-			"!site/pnpm-lock.yaml",
-			"!**/*.md"
+			"!apps/web/pnpm-lock.yaml",
+			"!**/*.md",
+			"!**/routeTree.gen.ts"
 		]
 	},
 	"formatter": {

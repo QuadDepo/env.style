@@ -53,7 +53,8 @@ export function validateColorOptions(options: EnvStylesOptions): void {
 		if (value !== undefined) parseHex(value);
 	}
 	for (const value of options.excludeColors ?? []) parseHex(value);
-	if (options.colorOpacity !== undefined) assertColorOpacity(options.colorOpacity);
+	if (options.colorOpacity !== undefined)
+		assertColorOpacity(options.colorOpacity);
 }
 
 export function resolveColor(
