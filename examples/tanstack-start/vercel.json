@@ -1,5 +1,5 @@
 {
 	"$schema": "https://openapi.vercel.sh/vercel.json",
-	"ignoreCommand": "git diff --quiet \"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" HEAD -- ../../src ../../scripts ../../package.json .",
+	"ignoreCommand": "git diff --quiet \"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" HEAD -- ../../packages/env.style/src ../../packages/env.style/package.json .",
 	"installCommand": "pnpm --dir ../.. install --frozen-lockfile && pnpm --dir ../.. build && pnpm install --frozen-lockfile"
 }
