@@ -194,6 +194,12 @@ describe("withEnvStyles", () => {
 		).toThrow(/invalid color/);
 	});
 
+	it("throws immediately on an invalid color opacity", () => {
+		expect(() => withEnvStyles({}, { ...DEV, colorOpacity: 1.1 })).toThrow(
+			/colorOpacity/,
+		);
+	});
+
 	it("serves a custom icon as-is: no tint, no excludeColors, no extra rewrite", async () => {
 		await mkdir(path.join(dir, "app"), { recursive: true });
 		await writeFile(
@@ -272,6 +278,26 @@ describe("withEnvStyles", () => {
 			"/favicon.ico",
 			"/icon.png",
 		]);
+	});
+
+	it("passes color opacity through to generated icons", async () => {
+		await mkdir(path.join(dir, "app"), { recursive: true });
+		await writeFile(
+			path.join(dir, "app/icon.png"),
+			await squarePng({ r: 255, g: 255, b: 255 }),
+		);
+
+		await resolve(
+			withEnvStyles(
+				{},
+				{ ...DEV, color: { development: "#ff0000" }, colorOpacity: 0.25 },
+			),
+		);
+		const center = await centerPixel(
+			await readFile(path.join(dir, "public/__envstyle/icon.png")),
+		);
+		expect(center.g).toBeGreaterThan(180);
+		expect(center.b).toBeGreaterThan(180);
 	});
 
 	it("warns and falls back to tinting when a custom icon is missing", async () => {

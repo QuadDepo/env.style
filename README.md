@@ -72,6 +72,8 @@ used as the `color` key. Any env without a color gets the gray fallback — exce
 - `environment?: string` — force the environment instead of detecting it.
 - `excludeColors?: string[]` — keep pixels near these colors untinted (e.g. white
   backgrounds or marks in an icon that shouldn't shift).
+- `colorOpacity?: number` — env color opacity from `0` (original icon) to `1`
+  (solid environment color). Default `0.75`.
 - `icon?: string | Partial<Record<string, string>>` — path to a ready-made icon, or a
   per-environment map of paths (e.g. `{ staging: 'staging-icon.png' }`), served as-is
   for styled environments. Tinting and `excludeColors` are skipped entirely. An env
@@ -81,6 +83,7 @@ used as the `color` key. Any env without a color gets the gray fallback — exce
 export default withEnvStyles(nextConfig, {
   color: { staging: '#ff00ff' },
   excludeColors: ['#fff'],
+  colorOpacity: 0.35,
 })
 ```
 
@@ -115,12 +118,6 @@ export default withEnvStyles(nextConfig, {
   script directly).
 - Runnable examples: `cd examples/nextjs && pnpm install && pnpm dev` (same for
   `examples/vite-react`) — the tab favicon should render tinted green.
-
-## Stargazers
-
-<a href="https://github.com/QuadDepo/env.style/stargazers">
-  <img alt="Star history" src="https://shieldcn.dev/chart/github/stars/QuadDepo/env.style.svg?bg=transparent&border=false&height=120" />
-</a>
 
 ## Contributors
 

@@ -4,6 +4,7 @@ import {
 	detectEnv,
 	type EnvStylesOptions,
 	resolveColor,
+	resolveColorOpacity,
 	resolveIcon,
 	validateColorOptions,
 } from "./env";
@@ -67,6 +68,7 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 
 			const color = resolveColor(env, options.color);
 			const icon = resolveIcon(env, options.icon);
+			const colorOpacity = resolveColorOpacity(options);
 			const publicDir = path.resolve(config.root, config.publicDir);
 			try {
 				const icons = findSourceIcons(
@@ -79,6 +81,7 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 						icons[0] ?? null,
 						color,
 						options.excludeColors ?? [],
+						colorOpacity,
 					));
 				await writeTintedIcon(publicDir, png);
 			} catch (err) {

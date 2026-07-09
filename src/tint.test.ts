@@ -91,6 +91,16 @@ describe("tintIcon", () => {
 		expect(center.a).toBe(255);
 	});
 
+	it("supports weaker color opacity", async () => {
+		const src = path.join(dir, "icon.png");
+		await writeFile(src, await whiteSquarePng());
+		const out = await tintIcon(src, "#ff0000", [], 0.25);
+		const center = await centerPixel(out);
+		expect(center.r).toBe(255);
+		expect(center.g).toBeGreaterThan(180);
+		expect(center.b).toBeGreaterThan(180);
+	});
+
 	it("leaves excluded white pixels near-white", async () => {
 		const src = path.join(dir, "icon.png");
 		await writeFile(src, await whiteSquarePng());
@@ -152,6 +162,12 @@ describe("tintIcon", () => {
 
 	it("rejects a non-hex color", async () => {
 		await expect(tintIcon(null, "red")).rejects.toThrow(/invalid color/);
+	});
+
+	it("rejects an invalid color opacity", async () => {
+		await expect(tintIcon(null, "#3b82f6", [], 2)).rejects.toThrow(
+			/colorOpacity/,
+		);
 	});
 });
 
