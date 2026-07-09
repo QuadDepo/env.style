@@ -16,7 +16,6 @@ export default defineConfig({
 			color: {
 				development: "#00ff00",
 			},
-			colorOpacity: 0.4,
 		}),
 	],
 });
