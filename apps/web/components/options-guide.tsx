@@ -5,13 +5,7 @@ import { cn } from "@/lib/utils";
 import { FrameworkSelect } from "./demo/framework-select";
 import { CONFIG_FILES, useDemo } from "./demo/provider";
 
-type OptionId =
-	| "enabled"
-	| "environment"
-	| "color"
-	| "colorOpacity"
-	| "icon"
-	| "excludeColors";
+type OptionId = "enabled" | "environment" | "color" | "icon" | "excludeColors";
 
 const OPTIONS: {
 	id: OptionId;
@@ -44,13 +38,6 @@ const OPTIONS: {
 			"Set tint colors by environment. Unset environments use the defaults.",
 	},
 	{
-		id: "colorOpacity",
-		prefix: "colorOpacity: ",
-		value: "0.75",
-		type: "number, default 0.75",
-		description: "Control how strongly the env color blends into the icon.",
-	},
-	{
 		id: "icon",
 		prefix: "icon: { staging: ",
 		value: "'./flask.svg'",
@@ -72,7 +59,6 @@ const SUFFIXES: Record<OptionId, string> = {
 	enabled: ",",
 	environment: ",",
 	color: " },",
-	colorOpacity: ",",
 	icon: " },",
 	excludeColors: "],",
 };
