@@ -14,7 +14,8 @@
 			"!apps/web/public",
 			"!pnpm-lock.yaml",
 			"!apps/web/pnpm-lock.yaml",
-			"!**/*.md"
+			"!**/*.md",
+			"!**/routeTree.gen.ts"
 		]
 	},
 	"formatter": {

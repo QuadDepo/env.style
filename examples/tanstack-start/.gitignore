@@ -1,4 +1,3 @@
 .vercel
 .output
 .env*
-src/routeTree.gen.ts
