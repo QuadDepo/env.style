@@ -4,6 +4,7 @@ import {
 	detectEnv,
 	type EnvStylesOptions,
 	resolveColor,
+	resolveColorOpacity,
 	resolveIcon,
 	validateColorOptions,
 } from "./env";
@@ -24,6 +25,17 @@ const VITE_ICON_NAMES = [
 	"icon.svg",
 	"icon.png",
 ];
+const ACTIVE_DEFINE = "globalThis.__ENV_STYLE_FAVICON_ACTIVE__";
+
+function viteDefaultEnv(mode: string, command: string): string {
+	return mode === "production" || command !== "serve"
+		? "production"
+		: "development";
+}
+
+function isActive(options: EnvStylesOptions, env: string): boolean {
+	return options.enabled !== false && env !== "production";
+}
 
 export function envStyle(options: EnvStylesOptions = {}): Plugin {
 	validateColorOptions(options);
@@ -33,17 +45,30 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 
 	return {
 		name: "env-style",
+		config(_config, env) {
+			return {
+				define: {
+					[ACTIVE_DEFINE]: JSON.stringify(
+						isActive(
+							options,
+							detectEnv(options.environment, () =>
+								viteDefaultEnv(env.mode, env.command),
+							),
+						),
+					),
+				},
+			};
+		},
 		async configResolved(config) {
 			const env = detectEnv(options.environment, () =>
-				config.mode === "production" || config.command !== "serve"
-					? "production"
-					: "development",
+				viteDefaultEnv(config.mode, config.command),
 			);
-			active = options.enabled !== false && env !== "production";
+			active = isActive(options, env);
 			if (!active) return;
 
 			const color = resolveColor(env, options.color);
 			const icon = resolveIcon(env, options.icon);
+			const colorOpacity = resolveColorOpacity(options);
 			const publicDir = path.resolve(config.root, config.publicDir);
 			try {
 				const icons = findSourceIcons(
@@ -56,6 +81,7 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 						icons[0] ?? null,
 						color,
 						options.excludeColors ?? [],
+						colorOpacity,
 					));
 				await writeTintedIcon(publicDir, png);
 			} catch (err) {

@@ -67,6 +67,7 @@ the tinted favicon. Works with both plain object and function-form configs.
 | `color`         | `Partial<Record<string, string>>`         | see above   | Override the tint color per environment (hex string).                       |
 | `environment`   | `string`                                  | auto-detect | Force the environment instead of detecting it.                              |
 | `excludeColors` | `string[]`                                | `[]`        | Keep pixels near these hex colors untinted (e.g. `['#fff']` for white).    |
+| `colorOpacity`  | `number`                                  | `0.75`      | Env color opacity from `0` (original icon) to `1` (solid environment color). |
 | `icon`          | `string \| Partial<Record<string, string>>`| `undefined` | Path to a ready-made icon, or a per-environment map of paths.              |
 
 #### Examples

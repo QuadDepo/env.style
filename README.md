@@ -49,12 +49,6 @@ how it works.
 See [DEVELOPMENT.md](./DEVELOPMENT.md) for setup, repo structure, and
 how to run examples.
 
-## Stargazers
-
-<a href="https://github.com/QuadDepo/env.style/stargazers">
-  <img alt="Star history" src="https://shieldcn.dev/chart/github/stars/QuadDepo/env.style.svg?bg=transparent&border=false&height=120" />
-</a>
-
 ## Contributors
 
 <a href="https://github.com/QuadDepo/env.style/graphs/contributors">

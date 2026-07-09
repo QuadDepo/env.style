@@ -31,6 +31,16 @@
 				"types": "./dist/vite.d.cts",
 				"default": "./dist/vite.cjs"
 			}
+		},
+		"./tanstack-start": {
+			"import": {
+				"types": "./dist/tanstack-start.d.ts",
+				"default": "./dist/tanstack-start.js"
+			},
+			"require": {
+				"types": "./dist/tanstack-start.d.cts",
+				"default": "./dist/tanstack-start.cjs"
+			}
 		}
 	},
 	"main": "./dist/index.cjs",
@@ -44,7 +54,7 @@
 		"node": ">=18.17.0"
 	},
 	"scripts": {
-		"build": "tsup src/index.ts src/vite.ts --format esm,cjs --dts",
+		"build": "tsup src/index.ts src/vite.ts src/tanstack-start.ts --format esm,cjs --dts",
 		"prepublishOnly": "pnpm build",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",

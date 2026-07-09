@@ -1,4 +1,5 @@
 import { parseHex } from "./color";
+import { DEFAULT_COLOR_OPACITY } from "./constants";
 
 export interface EnvStylesOptions {
 	/** Kill switch for the whole tool. Default true. */
@@ -9,6 +10,8 @@ export interface EnvStylesOptions {
 	environment?: string;
 	/** Keep pixels near these colors untinted. */
 	excludeColors?: string[];
+	/** Opacity for the env color blend, from 0 (original icon) to 1 (solid env color). Default 0.75. */
+	colorOpacity?: number;
 	/**
 	 * Path to a ready-made icon, relative to the project root (absolute also allowed),
 	 * or a per-environment map of paths, e.g. { staging: 'staging-icon.png' }. Served
@@ -38,12 +41,20 @@ export function detectEnv(
 	);
 }
 
+export function assertColorOpacity(colorOpacity: number): void {
+	if (!Number.isFinite(colorOpacity) || colorOpacity < 0 || colorOpacity > 1) {
+		throw new Error("env.style: colorOpacity must be between 0 and 1");
+	}
+}
+
 /** Fail loudly on a bad config value, not mid-build. */
 export function validateColorOptions(options: EnvStylesOptions): void {
 	for (const value of Object.values(options.color ?? {})) {
 		if (value !== undefined) parseHex(value);
 	}
 	for (const value of options.excludeColors ?? []) parseHex(value);
+	if (options.colorOpacity !== undefined)
+		assertColorOpacity(options.colorOpacity);
 }
 
 export function resolveColor(
@@ -58,4 +69,8 @@ export function resolveIcon(
 	icon: EnvStylesOptions["icon"],
 ): string | undefined {
 	return typeof icon === "string" ? icon : icon?.[env];
+}
+
+export function resolveColorOpacity(options: EnvStylesOptions): number {
+	return options.colorOpacity ?? DEFAULT_COLOR_OPACITY;
 }
