@@ -6,7 +6,7 @@
 		"build": "next build"
 	},
 	"dependencies": {
-		"env.style": "link:../..",
+		"env.style": "link:../../packages/env.style",
 		"next": "catalog:",
 		"react": "catalog:",
 		"react-dom": "catalog:"

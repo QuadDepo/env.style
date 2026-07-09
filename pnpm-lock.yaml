@@ -97,8 +97,8 @@ importers:
   examples/nextjs:
     dependencies:
       env.style:
-        specifier: link:../..
-        version: link:../..
+        specifier: link:../../packages/env.style
+        version: link:../../packages/env.style
       next:
         specifier: 'catalog:'
         version: 16.2.10(@babel/core@7.29.7)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
