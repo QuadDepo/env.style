@@ -162,8 +162,8 @@ importers:
   examples/vite-react:
     dependencies:
       env.style:
-        specifier: link:../..
-        version: link:../..
+        specifier: link:../../packages/env.style
+        version: link:../../packages/env.style
       react:
         specifier: 'catalog:'
         version: 19.2.7

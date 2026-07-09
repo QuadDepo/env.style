@@ -8,7 +8,7 @@
 		"preview": "vite preview --host 127.0.0.1 --port 3124"
 	},
 	"dependencies": {
-		"env.style": "link:../..",
+		"env.style": "link:../../packages/env.style",
 		"react": "catalog:",
 		"react-dom": "catalog:"
 	},
