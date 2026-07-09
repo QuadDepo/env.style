@@ -16,5 +16,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # examples typecheck against the built package (env.style/vite, /tanstack-start)
+      - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test
