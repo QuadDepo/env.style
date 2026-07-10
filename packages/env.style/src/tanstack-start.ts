@@ -1,8 +1,8 @@
-import { TINTED_ICON_URL } from "./constants";
+import { TINTED_ICON_192_URL, TINTED_ICON_URL } from "./constants";
 import { detectEnv } from "./env";
 
 export type EnvStyleLink = {
-	rel: "icon";
+	rel: string;
 	href: string;
 };
 
@@ -18,7 +18,11 @@ declare global {
  */
 export function envStyleLinks(): EnvStyleLink[] {
 	const active = globalThis.__ENV_STYLE_FAVICON_ACTIVE__ ?? runtimeActive();
-	return active ? [{ rel: "icon", href: TINTED_ICON_URL }] : [];
+	if (!active) return [];
+	return [
+		{ rel: "icon", href: TINTED_ICON_URL },
+		{ rel: "apple-touch-icon", href: TINTED_ICON_192_URL },
+	];
 }
 
 function runtimeActive(): boolean {

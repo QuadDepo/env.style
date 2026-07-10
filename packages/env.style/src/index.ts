@@ -1,6 +1,11 @@
 import path from "node:path";
 import type { NextConfig } from "next";
 import {
+	TINTED_ICON_192_URL,
+	TINTED_ICON_512_URL,
+	TINTED_ICON_URL,
+} from "./constants";
+import {
 	detectEnv,
 	type EnvStylesOptions,
 	resolveColor,
@@ -9,15 +14,16 @@ import {
 	validateColorOptions,
 } from "./env";
 import {
-	customIconPng,
+	customIconsPng,
 	findSourceIcons,
 	iconUrl,
-	TINTED_ICON_URL,
-	tintIcon,
-	writeTintedIcon,
+	tintAllSizes,
+	writeTintedIcons,
 } from "./tint";
 
 export type { EnvStylesOptions } from "./env";
+export type { Manifest, ManifestIcon } from "./manifest";
+export { envStyleManifest } from "./manifest";
 
 type PhaseCtx = { defaultConfig: NextConfig };
 type NextConfigFn = (
@@ -42,6 +48,7 @@ const NEXT_ICON_CANDIDATES = [
 	"public/favicon.ico",
 	"public/favicon.png",
 	"public/favicon.svg",
+	"public/apple-touch-icon.png",
 ];
 
 export function withEnvStyles(
@@ -85,10 +92,18 @@ async function decorate(
 	const sources = [...new Set(["/favicon.ico", ...icons.map(iconUrl)])];
 
 	try {
-		const png =
-			(await customIconPng(root, customIcon)) ??
-			(await tintIcon(icons[0] ?? null, color, excludeColors, colorOpacity));
-		await writeTintedIcon(path.join(root, "public"), png);
+		const customIcons = await customIconsPng(root, customIcon);
+		if (customIcons) {
+			await writeTintedIcons(path.join(root, "public"), customIcons);
+		} else {
+			const tintedIcons = await tintAllSizes(
+				icons[0] ?? null,
+				color,
+				excludeColors,
+				colorOpacity,
+			);
+			await writeTintedIcons(path.join(root, "public"), tintedIcons);
+		}
 	} catch (err) {
 		console.warn(
 			`env.style: favicon tinting skipped — ${err instanceof Error ? err.message : err}`,
@@ -96,13 +111,25 @@ async function decorate(
 		return config;
 	}
 
+	const pwaSources = [TINTED_ICON_192_URL, TINTED_ICON_512_URL];
+
 	return {
 		...config,
-		rewrites: mergeRewrites(
-			config.rewrites,
-			sources.map((source) => ({ source, destination: TINTED_ICON_URL })),
-		),
-		headers: mergeHeaders(config.headers, [...sources, TINTED_ICON_URL]),
+		rewrites: mergeRewrites(config.rewrites, [
+			...sources.map((source) => ({
+				source,
+				destination: TINTED_ICON_URL,
+			})),
+			...pwaSources.map((source) => ({
+				source,
+				destination: source,
+			})),
+		]),
+		headers: mergeHeaders(config.headers, [
+			...sources,
+			TINTED_ICON_URL,
+			...pwaSources,
+		]),
 	};
 }
 

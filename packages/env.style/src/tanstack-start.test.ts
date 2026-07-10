@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TINTED_ICON_192_URL, TINTED_ICON_URL } from "./constants";
 import { envStyleLinks } from "./tanstack-start";
-import { TINTED_ICON_URL } from "./tint";
 
 afterEach(() => {
 	vi.unstubAllEnvs();
@@ -10,7 +10,10 @@ afterEach(() => {
 describe("envStyleLinks", () => {
 	it("uses the Vite-defined active flag when present", () => {
 		vi.stubGlobal("__ENV_STYLE_FAVICON_ACTIVE__", true);
-		expect(envStyleLinks()).toEqual([{ rel: "icon", href: TINTED_ICON_URL }]);
+		expect(envStyleLinks()).toEqual([
+			{ rel: "icon", href: TINTED_ICON_URL },
+			{ rel: "apple-touch-icon", href: TINTED_ICON_192_URL },
+		]);
 
 		vi.stubGlobal("__ENV_STYLE_FAVICON_ACTIVE__", false);
 		expect(envStyleLinks()).toEqual([]);
@@ -19,7 +22,10 @@ describe("envStyleLinks", () => {
 	it("lets the define win over runtime env detection", () => {
 		vi.stubGlobal("__ENV_STYLE_FAVICON_ACTIVE__", true);
 		vi.stubEnv("ENV_STYLES_ENV", "production");
-		expect(envStyleLinks()).toEqual([{ rel: "icon", href: TINTED_ICON_URL }]);
+		expect(envStyleLinks()).toEqual([
+			{ rel: "icon", href: TINTED_ICON_URL },
+			{ rel: "apple-touch-icon", href: TINTED_ICON_192_URL },
+		]);
 
 		vi.stubGlobal("__ENV_STYLE_FAVICON_ACTIVE__", false);
 		vi.stubEnv("ENV_STYLES_ENV", "development");
@@ -35,7 +41,10 @@ describe("envStyleLinks", () => {
 		vi.stubEnv("ENV_STYLES_ENV", "development");
 		vi.stubEnv("VERCEL_TARGET_ENV", "production");
 		vi.stubEnv("VERCEL_ENV", "production");
-		expect(envStyleLinks()).toEqual([{ rel: "icon", href: TINTED_ICON_URL }]);
+		expect(envStyleLinks()).toEqual([
+			{ rel: "icon", href: TINTED_ICON_URL },
+			{ rel: "apple-touch-icon", href: TINTED_ICON_192_URL },
+		]);
 
 		vi.unstubAllEnvs();
 		vi.stubEnv("VERCEL_TARGET_ENV", "production");
@@ -44,6 +53,9 @@ describe("envStyleLinks", () => {
 
 		vi.unstubAllEnvs();
 		vi.stubEnv("VERCEL_ENV", "preview");
-		expect(envStyleLinks()).toEqual([{ rel: "icon", href: TINTED_ICON_URL }]);
+		expect(envStyleLinks()).toEqual([
+			{ rel: "icon", href: TINTED_ICON_URL },
+			{ rel: "apple-touch-icon", href: TINTED_ICON_192_URL },
+		]);
 	});
 });

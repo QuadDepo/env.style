@@ -1,5 +1,11 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { Plugin } from "vite";
+import {
+	TINTED_ICON_192_URL,
+	TINTED_ICON_512_URL,
+	TINTED_ICON_URL,
+} from "./constants";
 import {
 	detectEnv,
 	type EnvStylesOptions,
@@ -9,11 +15,10 @@ import {
 	validateColorOptions,
 } from "./env";
 import {
-	customIconPng,
+	customIconsPng,
 	findSourceIcons,
-	TINTED_ICON_URL,
-	tintIcon,
-	writeTintedIcon,
+	tintAllSizes,
+	writeTintedIcons,
 } from "./tint";
 
 export type { EnvStylesOptions } from "./env";
@@ -42,6 +47,9 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 
 	let active = false;
 	let png: Buffer | null = null;
+	let png192: Buffer | null = null;
+	let png512: Buffer | null = null;
+	let publicDir = "";
 
 	return {
 		name: "env-style",
@@ -69,48 +77,111 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 			const color = resolveColor(env, options.color);
 			const icon = resolveIcon(env, options.icon);
 			const colorOpacity = resolveColorOpacity(options);
-			const publicDir = path.resolve(config.root, config.publicDir);
+			publicDir = path.resolve(config.root, config.publicDir);
 			try {
 				const icons = findSourceIcons(
 					config.root,
 					viteIconCandidates(config.root, publicDir),
 				);
-				png =
-					(await customIconPng(config.root, icon)) ??
-					(await tintIcon(
+				const customIcons = await customIconsPng(config.root, icon);
+				if (customIcons) {
+					png = customIcons.get(64) ?? null;
+					png192 = customIcons.get(192) ?? null;
+					png512 = customIcons.get(512) ?? null;
+					await writeTintedIcons(publicDir, customIcons);
+				} else {
+					const tintedIcons = await tintAllSizes(
 						icons[0] ?? null,
 						color,
 						options.excludeColors ?? [],
 						colorOpacity,
-					));
-				await writeTintedIcon(publicDir, png);
+					);
+					png = tintedIcons.get(64) ?? null;
+					png192 = tintedIcons.get(192) ?? null;
+					png512 = tintedIcons.get(512) ?? null;
+					await writeTintedIcons(publicDir, tintedIcons);
+				}
 			} catch (err) {
 				active = false;
 				png = null;
+				png192 = null;
+				png512 = null;
 				console.warn(
 					`env.style: favicon tinting skipped — ${err instanceof Error ? err.message : err}`,
 				);
 			}
 		},
 		transformIndexHtml(html) {
-			return active ? rewriteIconLinks(html) : html;
+			if (!active) return html;
+			let out = rewriteIconLinks(html);
+			out = rewriteManifestLink(out);
+			return out;
 		},
 		configureServer(server) {
 			server.middlewares.use((req, res, next) => {
 				const url = req.url?.split("?")[0];
-				if (
-					!active ||
-					!png ||
-					req.method !== "GET" ||
-					(url !== "/favicon.ico" && url !== TINTED_ICON_URL)
-				) {
-					return next();
+				if (!active || req.method !== "GET") return next();
+
+				if (url === TINTED_ICON_URL && png) {
+					res.statusCode = 200;
+					res.setHeader("Content-Type", "image/png");
+					res.setHeader("Cache-Control", "no-store");
+					return res.end(png);
 				}
-				res.statusCode = 200;
-				res.setHeader("Content-Type", "image/png");
-				res.setHeader("Cache-Control", "no-store");
-				res.end(png);
+				if (url === TINTED_ICON_192_URL && png192) {
+					res.statusCode = 200;
+					res.setHeader("Content-Type", "image/png");
+					res.setHeader("Cache-Control", "no-store");
+					return res.end(png192);
+				}
+				if (url === TINTED_ICON_512_URL && png512) {
+					res.statusCode = 200;
+					res.setHeader("Content-Type", "image/png");
+					res.setHeader("Cache-Control", "no-store");
+					return res.end(png512);
+				}
+				if (url === "/favicon.ico" && png) {
+					res.statusCode = 200;
+					res.setHeader("Content-Type", "image/png");
+					res.setHeader("Cache-Control", "no-store");
+					return res.end(png);
+				}
+
+				// Serve rewritten manifest
+				if (url && MANIFEST_FILES.includes(url.replace(/^\//, ""))) {
+					const manifestPath = path.join(publicDir, url.replace(/^\//, ""));
+					if (existsSync(manifestPath)) {
+						try {
+							const content = readFileSync(manifestPath, "utf-8");
+							const manifest = JSON.parse(content);
+							if (manifest.icons) {
+								manifest.icons = manifest.icons.map(
+									(icon: { src: string; sizes?: string }) => {
+										const size = icon.sizes;
+										if (size === "192x192")
+											return { ...icon, src: TINTED_ICON_192_URL };
+										if (size === "512x512")
+											return { ...icon, src: TINTED_ICON_512_URL };
+										return icon;
+									},
+								);
+							}
+							res.statusCode = 200;
+							res.setHeader("Content-Type", "application/manifest+json");
+							res.setHeader("Cache-Control", "no-store");
+							return res.end(JSON.stringify(manifest));
+						} catch {
+							// Fall through to static file serving
+						}
+					}
+				}
+
+				return next();
 			});
+		},
+		closeBundle() {
+			if (!active || !publicDir) return;
+			rewriteManifestFile(publicDir);
 		},
 	};
 }
@@ -128,17 +199,67 @@ function rewriteIconLinks(html: string): string {
 			/\brel=(["'])(.*?)\1/i.exec(tag)?.[2].toLowerCase().split(/\s+/) ?? [];
 		if (!rel.includes("icon")) return tag;
 		found = true;
+		// Use 192px icon for apple-touch-icon, standard icon for others
+		const isAppleTouch = rel.includes("apple-touch-icon");
+		const targetUrl = isAppleTouch ? TINTED_ICON_192_URL : TINTED_ICON_URL;
 		if (/\bhref=(["'])[^"']*\1/i.test(tag)) {
 			return tag.replace(
 				/\bhref=(["'])[^"']*\1/i,
-				(_match, quote: string) => `href=${quote}${TINTED_ICON_URL}${quote}`,
+				(_match, quote: string) => `href=${quote}${targetUrl}${quote}`,
 			);
 		}
-		return tag.replace(/\s*\/?>$/, ` href="${TINTED_ICON_URL}">`);
+		return tag.replace(/\s*\/?>$/, ` href="${targetUrl}">`);
 	});
 	if (found) return out;
 	const link = `<link rel="icon" href="${TINTED_ICON_URL}">`;
 	return /<\/head>/i.test(out)
 		? out.replace(/<\/head>/i, `  ${link}\n</head>`)
 		: `${link}\n${out}`;
+}
+
+function rewriteManifestLink(html: string): string {
+	return html.replace(/<link\b[^>]*rel=["']manifest["'][^>]*>/gi, (tag) => {
+		if (/\bhref=(["'])[^"']*\1/i.test(tag)) {
+			return tag.replace(
+				/\bhref=(["'])[^"']*\1/i,
+				(_match, quote: string) =>
+					`href=${quote}/__envstyle/manifest.json${quote}`,
+			);
+		}
+		return tag;
+	});
+}
+
+const MANIFEST_FILES = [
+	"manifest.json",
+	"manifest.webmanifest",
+	"site.webmanifest",
+];
+
+function rewriteManifestFile(publicDir: string): void {
+	for (const filename of MANIFEST_FILES) {
+		const manifestPath = path.join(publicDir, filename);
+		if (!existsSync(manifestPath)) continue;
+		try {
+			const content = readFileSync(manifestPath, "utf-8");
+			const manifest = JSON.parse(content);
+			if (!manifest.icons) continue;
+			manifest.icons = manifest.icons.map(
+				(icon: { src: string; sizes?: string }) => {
+					const size = icon.sizes;
+					if (size === "192x192") return { ...icon, src: TINTED_ICON_192_URL };
+					if (size === "512x512") return { ...icon, src: TINTED_ICON_512_URL };
+					return icon;
+				},
+			);
+			const outDir = path.join(publicDir, "__envstyle");
+			mkdirSync(outDir, { recursive: true });
+			writeFileSync(
+				path.join(outDir, "manifest.json"),
+				JSON.stringify(manifest, null, "\t"),
+			);
+		} catch {
+			// Skip invalid manifest files
+		}
+	}
 }

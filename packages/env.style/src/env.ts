@@ -19,6 +19,11 @@ export interface EnvStylesOptions {
 	 * env in the map falls back to normal tinting.
 	 */
 	icon?: string | Partial<Record<string, string>>;
+	/**
+	 * Generate multi-size icons (192x192, 512x512) for PWA manifests.
+	 * Also rewrites manifest.json/manifest.webmanifest icon URLs. Default true.
+	 */
+	pwa?: boolean;
 }
 
 export const DEFAULT_COLORS: Record<string, string> = {
