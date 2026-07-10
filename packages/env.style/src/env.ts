@@ -24,7 +24,6 @@ export interface EnvStylesOptions {
 export const DEFAULT_COLORS: Record<string, string> = {
 	development: "#3b82f6",
 	preview: "#f59e0b",
-	staging: "#f6821f",
 };
 export const FALLBACK_COLOR = "#6b7280";
 
