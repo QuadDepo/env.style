@@ -14,10 +14,13 @@ import {
 	validateColorOptions,
 } from "./env";
 import {
+	customIconPng,
 	customIconsPng,
 	findSourceIcons,
 	iconUrl,
 	tintAllSizes,
+	tintIcon,
+	writeTintedIcon,
 	writeTintedIcons,
 } from "./tint";
 
@@ -76,6 +79,7 @@ export function withEnvStyles(
 			options.excludeColors ?? [],
 			colorOpacity,
 			icon,
+			options.pwa !== false,
 		);
 	};
 }
@@ -86,23 +90,31 @@ async function decorate(
 	excludeColors: string[],
 	colorOpacity: number,
 	customIcon?: string,
+	pwa = true,
 ): Promise<NextConfig> {
 	const root = process.cwd();
 	const icons = findSourceIcons(root, NEXT_ICON_CANDIDATES);
 	const sources = [...new Set(["/favicon.ico", ...icons.map(iconUrl)])];
 
 	try {
-		const customIcons = await customIconsPng(root, customIcon);
-		if (customIcons) {
-			await writeTintedIcons(path.join(root, "public"), customIcons);
+		if (!pwa) {
+			const png =
+				(await customIconPng(root, customIcon)) ??
+				(await tintIcon(icons[0] ?? null, color, excludeColors, colorOpacity));
+			await writeTintedIcon(path.join(root, "public"), png);
 		} else {
-			const tintedIcons = await tintAllSizes(
-				icons[0] ?? null,
-				color,
-				excludeColors,
-				colorOpacity,
-			);
-			await writeTintedIcons(path.join(root, "public"), tintedIcons);
+			const customIcons = await customIconsPng(root, customIcon);
+			if (customIcons) {
+				await writeTintedIcons(path.join(root, "public"), customIcons);
+			} else {
+				const tintedIcons = await tintAllSizes(
+					icons[0] ?? null,
+					color,
+					excludeColors,
+					colorOpacity,
+				);
+				await writeTintedIcons(path.join(root, "public"), tintedIcons);
+			}
 		}
 	} catch (err) {
 		console.warn(
@@ -111,7 +123,7 @@ async function decorate(
 		return config;
 	}
 
-	const pwaSources = [TINTED_ICON_192_URL, TINTED_ICON_512_URL];
+	const pwaSources = pwa ? [TINTED_ICON_192_URL, TINTED_ICON_512_URL] : [];
 
 	return {
 		...config,

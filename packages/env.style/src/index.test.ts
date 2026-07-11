@@ -114,6 +114,21 @@ describe("withEnvStyles", () => {
 		});
 	});
 
+	it("only generates the favicon when pwa is false", async () => {
+		const config = await resolve(withEnvStyles({}, { ...DEV, pwa: false }));
+
+		expect(
+			await readFile(path.join(dir, "public/__envstyle/icon.png")),
+		).toBeTruthy();
+		await expect(
+			readFile(path.join(dir, "public/__envstyle/icon-192.png")),
+		).rejects.toMatchObject({ code: "ENOENT" });
+		const { beforeFiles: ours } = await beforeFiles(config);
+		expect(ours).toEqual([
+			{ source: "/favicon.ico", destination: "/__envstyle/icon.png" },
+		]);
+	});
+
 	it("intercepts every existing candidate icon URL", async () => {
 		await mkdir(path.join(dir, "app"), { recursive: true });
 		await writeFile(path.join(dir, "app/favicon.ico"), "");
