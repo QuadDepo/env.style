@@ -18,6 +18,10 @@ import {
 } from "./tint";
 
 export type { EnvStylesOptions } from "./env";
+export {
+	detectEnvDiagnostics,
+	type EnvironmentDiagnostics,
+} from "./env";
 
 type PhaseCtx = { defaultConfig: NextConfig };
 type NextConfigFn = (

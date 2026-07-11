@@ -110,6 +110,27 @@ normal tinting.
    - **Next.js:** `NODE_ENV === 'development' ? 'development' : 'production'`
    - **Vite:** `command === 'serve' ? 'development' : 'production'`
 
+## Detection diagnostics
+
+Run the doctor command from an application directory to see exactly how the
+environment was resolved:
+
+```bash
+pnpm exec env.style doctor
+pnpm exec env.style doctor --json
+```
+
+The report includes the detected environment, provider, source variable, active
+status, resolved color, project type, project root, and discovered icon. The same
+structured detection information is available programmatically:
+
+```ts
+import { detectEnvDiagnostics } from 'env.style'
+
+detectEnvDiagnostics(undefined, () => 'production')
+// { environment: 'preview', source: 'VERCEL_ENV', provider: 'vercel' }
+```
+
 ## How it works
 
 - Detects the environment (see precedence above).

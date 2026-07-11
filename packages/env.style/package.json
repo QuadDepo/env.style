@@ -11,6 +11,9 @@
 	"homepage": "https://github.com/QuadDepo/env.style/tree/main/packages/env.style#readme",
 	"bugs": "https://github.com/QuadDepo/env.style/issues",
 	"type": "module",
+	"bin": {
+		"env.style": "./dist/cli.js"
+	},
 	"exports": {
 		".": {
 			"import": {
@@ -54,7 +57,7 @@
 		"node": ">=18.17.0"
 	},
 	"scripts": {
-		"build": "tsup src/index.ts src/vite.ts src/tanstack-start.ts --format esm,cjs --dts",
+		"build": "tsup src/index.ts src/vite.ts src/tanstack-start.ts --format esm,cjs --dts && tsup src/cli.ts --format esm --dts",
 		"prepublishOnly": "pnpm build",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",

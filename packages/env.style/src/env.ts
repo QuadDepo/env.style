@@ -27,42 +27,81 @@ export const DEFAULT_COLORS: Record<string, string> = {
 };
 export const FALLBACK_COLOR = "#6b7280";
 
+export interface EnvironmentDiagnostics {
+	environment: string;
+	source: string;
+	provider: string | null;
+}
+
+export type EnvironmentVariables = Record<string, string | undefined>;
+
 export function detectEnv(
 	override: string | undefined,
 	frameworkDefault: () => string,
 ): string {
-	const env = typeof process === "undefined" ? undefined : process.env;
-	return (
-		override ??
-		env?.ENV_STYLES_ENV ??
+	return detectEnvDiagnostics(override, frameworkDefault).environment;
+}
+
+export function detectEnvDiagnostics(
+	override: string | undefined,
+	frameworkDefault: () => string,
+	env: EnvironmentVariables = typeof process === "undefined" ? {} : process.env,
+): EnvironmentDiagnostics {
+	const candidates: Array<[string | undefined, string, string | null]> = [
+		[override, "option:environment", null],
+		[env.ENV_STYLES_ENV, "ENV_STYLES_ENV", null],
 		// Vercel (already standard: production, preview, development)
-		env?.VERCEL_TARGET_ENV ??
-		env?.VERCEL_ENV ??
+		[env.VERCEL_TARGET_ENV, "VERCEL_TARGET_ENV", "vercel"],
+		[env.VERCEL_ENV, "VERCEL_ENV", "vercel"],
 		// Netlify
-		normalizeNetlify(env?.CONTEXT) ??
+		[normalizeNetlify(env.CONTEXT), "CONTEXT", "netlify"],
 		// Cloudflare Pages
-		env?.CLOUDFLARE_ENV ??
+		[env.CLOUDFLARE_ENV, "CLOUDFLARE_ENV", "cloudflare"],
 		// Railway
-		normalizeRailway(env?.RAILWAY_ENVIRONMENT) ??
+		[
+			normalizeRailway(env.RAILWAY_ENVIRONMENT),
+			"RAILWAY_ENVIRONMENT",
+			"railway",
+		],
 		// Render: RENDER identifies the platform; IS_PULL_REQUEST identifies previews.
-		normalizeRender(env?.RENDER, env?.IS_PULL_REQUEST) ??
+		[
+			normalizeRender(env.RENDER, env.IS_PULL_REQUEST),
+			"IS_PULL_REQUEST",
+			"render",
+		],
 		// Deno Deploy
-		normalizeDenoDeploy(env?.DENO_DEPLOY, env?.DENO_TIMELINE) ??
+		[
+			normalizeDenoDeploy(env.DENO_DEPLOY, env.DENO_TIMELINE),
+			"DENO_TIMELINE",
+			"deno",
+		],
 		// Fly.io (user-defined, no normalization)
-		env?.FLY_ENV ??
+		[env.FLY_ENV, "FLY_ENV", "fly.io"],
 		// Heroku: DYNO identifies the platform; HEROKU_PR_NUMBER identifies previews.
-		normalizeHeroku(env?.DYNO, env?.HEROKU_PR_NUMBER) ??
+		[
+			normalizeHeroku(env.DYNO, env.HEROKU_PR_NUMBER),
+			env.HEROKU_PR_NUMBER ? "HEROKU_PR_NUMBER" : "DYNO",
+			"heroku",
+		],
 		// Coolify exposes only the source branch, which cannot identify production
 		// without knowing the resource's configured production branch. Users can set
 		// ENV_STYLES_ENV explicitly for Coolify preview/staging environments.
 		// Zerops (user-defined, no normalization)
-		env?.ZEROPS_ENV ??
+		[env.ZEROPS_ENV, "ZEROPS_ENV", "zerops"],
 		// Sevalla (user-defined, no normalization)
-		env?.SEVALLA_ENV ??
+		[env.SEVALLA_ENV, "SEVALLA_ENV", "sevalla"],
 		// DigitalOcean App Platform (user-defined, no normalization)
-		env?.DO_ENV ??
-		frameworkDefault()
-	);
+		[env.DO_ENV, "DO_ENV", "digitalocean"],
+	];
+	for (const [environment, source, provider] of candidates) {
+		if (environment !== undefined && environment !== "")
+			return { environment, source, provider };
+	}
+	return {
+		environment: frameworkDefault(),
+		source: "framework-default",
+		provider: null,
+	};
 }
 
 function normalizeNetlify(context: string | undefined): string | undefined {
