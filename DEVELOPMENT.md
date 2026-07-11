@@ -8,6 +8,7 @@ env.style/
 ├── apps/web/              # Documentation website (Next.js + Tailwind)
 ├── examples/              # Runnable example projects
 │   ├── nextjs/
+│   ├── sveltekit/
 │   ├── tanstack-start/
 │   └── vite-react/
 ├── .github/workflows/     # CI + Release pipelines
@@ -46,6 +47,7 @@ Runnable example projects are in the `examples/` directory:
 
 ```bash
 cd examples/nextjs && pnpm install && pnpm dev
+cd examples/sveltekit && pnpm install && pnpm dev
 cd examples/tanstack-start && pnpm install && pnpm dev
 cd examples/vite-react && pnpm install && pnpm dev
 ```
