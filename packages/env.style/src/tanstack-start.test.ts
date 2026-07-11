@@ -19,6 +19,12 @@ describe("envStyleLinks", () => {
 		expect(envStyleLinks()).toEqual([]);
 	});
 
+	it("omits the apple touch icon when the Vite plugin disables PWA support", () => {
+		vi.stubGlobal("__ENV_STYLE_FAVICON_ACTIVE__", true);
+		vi.stubGlobal("__ENV_STYLE_PWA_ACTIVE__", false);
+		expect(envStyleLinks()).toEqual([{ rel: "icon", href: TINTED_ICON_URL }]);
+	});
+
 	it("lets the define win over runtime env detection", () => {
 		vi.stubGlobal("__ENV_STYLE_FAVICON_ACTIVE__", true);
 		vi.stubEnv("ENV_STYLES_ENV", "production");

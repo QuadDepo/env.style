@@ -8,6 +8,7 @@ export type EnvStyleLink = {
 
 declare global {
 	var __ENV_STYLE_FAVICON_ACTIVE__: boolean | undefined;
+	var __ENV_STYLE_PWA_ACTIVE__: boolean | undefined;
 }
 
 /**
@@ -19,10 +20,11 @@ declare global {
 export function envStyleLinks(): EnvStyleLink[] {
 	const active = globalThis.__ENV_STYLE_FAVICON_ACTIVE__ ?? runtimeActive();
 	if (!active) return [];
-	return [
-		{ rel: "icon", href: TINTED_ICON_URL },
-		{ rel: "apple-touch-icon", href: TINTED_ICON_192_URL },
-	];
+	const links = [{ rel: "icon", href: TINTED_ICON_URL }];
+	if (globalThis.__ENV_STYLE_PWA_ACTIVE__ ?? true) {
+		links.push({ rel: "apple-touch-icon", href: TINTED_ICON_192_URL });
+	}
+	return links;
 }
 
 function runtimeActive(): boolean {

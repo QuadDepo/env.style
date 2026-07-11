@@ -15,9 +15,12 @@ import {
 	validateColorOptions,
 } from "./env";
 import {
+	customIconPng,
 	customIconsPng,
 	findSourceIcons,
 	tintAllSizes,
+	tintIcon,
+	writeTintedIcon,
 	writeTintedIcons,
 } from "./tint";
 
@@ -31,6 +34,7 @@ const VITE_ICON_NAMES = [
 	"icon.png",
 ];
 const ACTIVE_DEFINE = "globalThis.__ENV_STYLE_FAVICON_ACTIVE__";
+const PWA_DEFINE = "globalThis.__ENV_STYLE_PWA_ACTIVE__";
 
 function viteDefaultEnv(mode: string, command: string): string {
 	return mode === "production" || command !== "serve"
@@ -54,16 +58,16 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 	return {
 		name: "env-style",
 		config(_config, env) {
+			const active = isActive(
+				options,
+				detectEnv(options.environment, () =>
+					viteDefaultEnv(env.mode, env.command),
+				),
+			);
 			return {
 				define: {
-					[ACTIVE_DEFINE]: JSON.stringify(
-						isActive(
-							options,
-							detectEnv(options.environment, () =>
-								viteDefaultEnv(env.mode, env.command),
-							),
-						),
-					),
+					[ACTIVE_DEFINE]: JSON.stringify(active),
+					[PWA_DEFINE]: JSON.stringify(active && options.pwa !== false),
 				},
 			};
 		},
@@ -83,23 +87,36 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 					config.root,
 					viteIconCandidates(config.root, publicDir),
 				);
-				const customIcons = await customIconsPng(config.root, icon);
-				if (customIcons) {
-					png = customIcons.get(64) ?? null;
-					png192 = customIcons.get(192) ?? null;
-					png512 = customIcons.get(512) ?? null;
-					await writeTintedIcons(publicDir, customIcons);
+				if (options.pwa === false) {
+					png =
+						(await customIconPng(config.root, icon)) ??
+						(await tintIcon(
+							icons[0] ?? null,
+							color,
+							options.excludeColors ?? [],
+							colorOpacity,
+						));
+					await writeTintedIcon(publicDir, png);
 				} else {
-					const tintedIcons = await tintAllSizes(
-						icons[0] ?? null,
-						color,
-						options.excludeColors ?? [],
-						colorOpacity,
-					);
-					png = tintedIcons.get(64) ?? null;
-					png192 = tintedIcons.get(192) ?? null;
-					png512 = tintedIcons.get(512) ?? null;
-					await writeTintedIcons(publicDir, tintedIcons);
+					const customIcons = await customIconsPng(config.root, icon);
+					if (customIcons) {
+						png = customIcons.get(64) ?? null;
+						png192 = customIcons.get(192) ?? null;
+						png512 = customIcons.get(512) ?? null;
+						await writeTintedIcons(publicDir, customIcons);
+					} else {
+						const tintedIcons = await tintAllSizes(
+							icons[0] ?? null,
+							color,
+							options.excludeColors ?? [],
+							colorOpacity,
+						);
+						png = tintedIcons.get(64) ?? null;
+						png192 = tintedIcons.get(192) ?? null;
+						png512 = tintedIcons.get(512) ?? null;
+						await writeTintedIcons(publicDir, tintedIcons);
+					}
+					rewriteManifestFiles(publicDir);
 				}
 			} catch (err) {
 				active = false;
@@ -114,7 +131,7 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 		transformIndexHtml(html) {
 			if (!active) return html;
 			let out = rewriteIconLinks(html);
-			out = rewriteManifestLink(out);
+			if (options.pwa !== false) out = rewriteManifestLink(out);
 			return out;
 		},
 		configureServer(server) {
@@ -179,10 +196,6 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 				return next();
 			});
 		},
-		closeBundle() {
-			if (!active || !publicDir) return;
-			rewriteManifestFile(publicDir);
-		},
 	};
 }
 
@@ -197,7 +210,7 @@ function rewriteIconLinks(html: string): string {
 	const out = html.replace(/<link\b[^>]*>/gi, (tag) => {
 		const rel =
 			/\brel=(["'])(.*?)\1/i.exec(tag)?.[2].toLowerCase().split(/\s+/) ?? [];
-		if (!rel.includes("icon")) return tag;
+		if (!rel.includes("icon") && !rel.includes("apple-touch-icon")) return tag;
 		found = true;
 		// Use 192px icon for apple-touch-icon, standard icon for others
 		const isAppleTouch = rel.includes("apple-touch-icon");
@@ -219,11 +232,14 @@ function rewriteIconLinks(html: string): string {
 
 function rewriteManifestLink(html: string): string {
 	return html.replace(/<link\b[^>]*rel=["']manifest["'][^>]*>/gi, (tag) => {
-		if (/\bhref=(["'])[^"']*\1/i.test(tag)) {
+		const href = /\bhref=(["'])([^"']*)\1/i.exec(tag)?.[2];
+		if (href) {
+			const filename = path.posix.basename(href.split(/[?#]/)[0]);
+			if (!MANIFEST_FILES.includes(filename)) return tag;
 			return tag.replace(
 				/\bhref=(["'])[^"']*\1/i,
 				(_match, quote: string) =>
-					`href=${quote}/__envstyle/manifest.json${quote}`,
+					`href=${quote}/__envstyle/${filename}${quote}`,
 			);
 		}
 		return tag;
@@ -236,7 +252,7 @@ const MANIFEST_FILES = [
 	"site.webmanifest",
 ];
 
-function rewriteManifestFile(publicDir: string): void {
+function rewriteManifestFiles(publicDir: string): void {
 	for (const filename of MANIFEST_FILES) {
 		const manifestPath = path.join(publicDir, filename);
 		if (!existsSync(manifestPath)) continue;
@@ -255,7 +271,7 @@ function rewriteManifestFile(publicDir: string): void {
 			const outDir = path.join(publicDir, "__envstyle");
 			mkdirSync(outDir, { recursive: true });
 			writeFileSync(
-				path.join(outDir, "manifest.json"),
+				path.join(outDir, filename),
 				JSON.stringify(manifest, null, "\t"),
 			);
 		} catch {
