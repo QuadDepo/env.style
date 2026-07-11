@@ -4,6 +4,7 @@ import path from "node:path";
 import type { NextConfig } from "next";
 import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { detectEnv } from "./env";
 import { type NextConfigInput, withEnvStyles } from "./index";
 
 let dir: string;
@@ -370,11 +371,9 @@ describe("withEnvStyles", () => {
 			expect(withEnvStyles(config)).toBe(config);
 		});
 
-		it("RENDER is detected", async () => {
+		it("keeps ordinary Render deployments in production", () => {
 			vi.stubEnv("RENDER", "true");
-			const config = {};
-			// RENDER="true" is not "production", so it returns a function form
-			expect(typeof withEnvStyles(config)).toBe("function");
+			expect(detectEnv(undefined, () => "development")).toBe("production");
 		});
 
 		it("FLY_ENV is detected", () => {
@@ -401,25 +400,21 @@ describe("withEnvStyles", () => {
 			expect(withEnvStyles(config)).toBe(config);
 		});
 
-		it("DENO_DEPLOY is detected", async () => {
+		it("keeps the Deno production timeline in production", () => {
 			vi.stubEnv("DENO_DEPLOY", "true");
-			const config = {};
-			// DENO_DEPLOY="true" is not "production", so it returns a function form
-			expect(typeof withEnvStyles(config)).toBe("function");
+			vi.stubEnv("DENO_TIMELINE", "production");
+			expect(detectEnv(undefined, () => "development")).toBe("production");
 		});
 
-		it("DYNO (Heroku) is detected", async () => {
+		it("keeps ordinary Heroku dynos in production", () => {
 			vi.stubEnv("DYNO", "web.1");
-			const config = {};
-			// DYNO="web.1" is not "production", so it returns a function form
-			expect(typeof withEnvStyles(config)).toBe("function");
+			expect(detectEnv(undefined, () => "development")).toBe("production");
 		});
 
-		it("COOLIFY_BRANCH is detected", async () => {
+		it("does not infer an environment from a Coolify branch name", () => {
 			vi.stubEnv("COOLIFY_BRANCH", "main");
-			const config = {};
-			// COOLIFY_BRANCH="main" is not "production", so it returns a function form
-			expect(typeof withEnvStyles(config)).toBe("function");
+			expect(detectEnv(undefined, () => "production")).toBe("production");
+			expect(detectEnv(undefined, () => "development")).toBe("development");
 		});
 
 		it("DO_ENV is detected", () => {
@@ -443,9 +438,10 @@ describe("withEnvStyles", () => {
 			expect(typeof withEnvStyles({})).toBe("function");
 		});
 
-		it("normalizes Render true to preview", () => {
+		it("normalizes Render pull requests to preview", () => {
 			vi.stubEnv("RENDER", "true");
-			expect(typeof withEnvStyles({})).toBe("function");
+			vi.stubEnv("IS_PULL_REQUEST", "true");
+			expect(detectEnv(undefined, () => "production")).toBe("preview");
 		});
 
 		it("normalizes Railway PR environments to preview", () => {
@@ -453,14 +449,18 @@ describe("withEnvStyles", () => {
 			expect(typeof withEnvStyles({})).toBe("function");
 		});
 
-		it("normalizes Heroku DYNO to preview", () => {
+		it("normalizes Heroku review apps to preview", () => {
 			vi.stubEnv("DYNO", "web.1");
-			expect(typeof withEnvStyles({})).toBe("function");
+			vi.stubEnv("HEROKU_PR_NUMBER", "123");
+			expect(detectEnv(undefined, () => "production")).toBe("preview");
 		});
 
-		it("normalizes Deno Deploy true to preview", () => {
+		it("normalizes Deno preview and branch timelines", () => {
 			vi.stubEnv("DENO_DEPLOY", "true");
-			expect(typeof withEnvStyles({})).toBe("function");
+			vi.stubEnv("DENO_TIMELINE", "preview/revision-123");
+			expect(detectEnv(undefined, () => "production")).toBe("preview");
+			vi.stubEnv("DENO_TIMELINE", "git-branch/feature-x");
+			expect(detectEnv(undefined, () => "production")).toBe("development");
 		});
 	});
 });
