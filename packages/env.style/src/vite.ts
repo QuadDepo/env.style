@@ -54,6 +54,7 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 	let png192: Buffer | null = null;
 	let png512: Buffer | null = null;
 	let publicDir = "";
+	let rewrittenManifests = new Set<string>();
 
 	return {
 		name: "env-style",
@@ -116,7 +117,7 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 						png512 = tintedIcons.get(512) ?? null;
 						await writeTintedIcons(publicDir, tintedIcons);
 					}
-					rewriteManifestFiles(publicDir);
+					rewrittenManifests = rewriteManifestFiles(publicDir);
 				}
 			} catch (err) {
 				active = false;
@@ -131,7 +132,8 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 		transformIndexHtml(html) {
 			if (!active) return html;
 			let out = rewriteIconLinks(html);
-			if (options.pwa !== false) out = rewriteManifestLink(out);
+			if (options.pwa !== false)
+				out = rewriteManifestLink(out, rewrittenManifests);
 			return out;
 		},
 		configureServer(server) {
@@ -230,12 +232,12 @@ function rewriteIconLinks(html: string): string {
 		: `${link}\n${out}`;
 }
 
-function rewriteManifestLink(html: string): string {
+function rewriteManifestLink(html: string, rewritten: Set<string>): string {
 	return html.replace(/<link\b[^>]*rel=["']manifest["'][^>]*>/gi, (tag) => {
 		const href = /\bhref=(["'])([^"']*)\1/i.exec(tag)?.[2];
 		if (href) {
 			const filename = path.posix.basename(href.split(/[?#]/)[0]);
-			if (!MANIFEST_FILES.includes(filename)) return tag;
+			if (!rewritten.has(filename)) return tag;
 			return tag.replace(
 				/\bhref=(["'])[^"']*\1/i,
 				(_match, quote: string) =>
@@ -252,7 +254,8 @@ const MANIFEST_FILES = [
 	"site.webmanifest",
 ];
 
-function rewriteManifestFiles(publicDir: string): void {
+function rewriteManifestFiles(publicDir: string): Set<string> {
+	const rewritten = new Set<string>();
 	for (const filename of MANIFEST_FILES) {
 		const manifestPath = path.join(publicDir, filename);
 		if (!existsSync(manifestPath)) continue;
@@ -274,8 +277,10 @@ function rewriteManifestFiles(publicDir: string): void {
 				path.join(outDir, filename),
 				JSON.stringify(manifest, null, "\t"),
 			);
+			rewritten.add(filename);
 		} catch {
 			// Skip invalid manifest files
 		}
 	}
+	return rewritten;
 }

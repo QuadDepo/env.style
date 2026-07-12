@@ -193,6 +193,21 @@ describe("envStyle", () => {
 		expect(html).toContain('href="/__envstyle/site.webmanifest"');
 	});
 
+	it("keeps the original manifest link when no rewritten manifest was generated", async () => {
+		await writeSvg();
+		await writeFile(
+			path.join(dir, "public/manifest.json"),
+			JSON.stringify({ name: "No icons" }),
+		);
+		const p = plugin({ environment: "development" });
+		await p.configResolved(config());
+		const original = '<link rel="manifest" href="/manifest.json">';
+		expect(await p.transformIndexHtml(original)).toContain(original);
+		expect(existsSync(path.join(dir, "public/__envstyle/manifest.json"))).toBe(
+			false,
+		);
+	});
+
 	it("disables PWA assets and manifest rewriting when pwa is false", async () => {
 		await writeSvg();
 		await writeFile(

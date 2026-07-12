@@ -127,16 +127,13 @@ async function decorate(
 
 	return {
 		...config,
-		rewrites: mergeRewrites(config.rewrites, [
-			...sources.map((source) => ({
+		rewrites: mergeRewrites(
+			config.rewrites,
+			sources.map((source) => ({
 				source,
 				destination: TINTED_ICON_URL,
 			})),
-			...pwaSources.map((source) => ({
-				source,
-				destination: source,
-			})),
-		]),
+		),
 		headers: mergeHeaders(config.headers, [
 			...sources,
 			TINTED_ICON_URL,

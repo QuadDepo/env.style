@@ -97,14 +97,6 @@ describe("withEnvStyles", () => {
 		const { beforeFiles: ours } = await beforeFiles(config);
 		expect(ours).toEqual([
 			{ source: "/favicon.ico", destination: "/__envstyle/icon.png" },
-			{
-				source: "/__envstyle/icon-192.png",
-				destination: "/__envstyle/icon-192.png",
-			},
-			{
-				source: "/__envstyle/icon-512.png",
-				destination: "/__envstyle/icon-512.png",
-			},
 		]);
 
 		const headers = await config.headers!();
@@ -149,8 +141,6 @@ describe("withEnvStyles", () => {
 		expect(ours.map((r: { source: string }) => r.source)).toEqual([
 			"/favicon.ico",
 			"/icon.png",
-			"/__envstyle/icon-192.png",
-			"/__envstyle/icon-512.png",
 		]);
 	});
 
@@ -176,12 +166,7 @@ describe("withEnvStyles", () => {
 		const rewrites = await beforeFiles(config);
 		expect(
 			rewrites.beforeFiles.map((r: { source: string }) => r.source),
-		).toEqual([
-			"/favicon.ico",
-			"/__envstyle/icon-192.png",
-			"/__envstyle/icon-512.png",
-			"/u",
-		]);
+		).toEqual(["/favicon.ico", "/u"]);
 		expect(rewrites.afterFiles).toEqual(user.afterFiles);
 	});
 
@@ -256,8 +241,6 @@ describe("withEnvStyles", () => {
 		expect(ours.map((r: { source: string }) => r.source)).toEqual([
 			"/favicon.ico",
 			"/icon.png",
-			"/__envstyle/icon-192.png",
-			"/__envstyle/icon-512.png",
 		]);
 	});
 
@@ -287,8 +270,6 @@ describe("withEnvStyles", () => {
 		expect(ours.map((r: { source: string }) => r.source)).toEqual([
 			"/favicon.ico",
 			"/icon.png",
-			"/__envstyle/icon-192.png",
-			"/__envstyle/icon-512.png",
 		]);
 	});
 
@@ -311,8 +292,6 @@ describe("withEnvStyles", () => {
 		expect(ours.map((r: { source: string }) => r.source)).toEqual([
 			"/favicon.ico",
 			"/icon.png",
-			"/__envstyle/icon-192.png",
-			"/__envstyle/icon-512.png",
 		]);
 	});
 
@@ -359,8 +338,6 @@ describe("withEnvStyles", () => {
 		expect(ours.map((r: { source: string }) => r.source)).toEqual([
 			"/favicon.ico",
 			"/icon.png",
-			"/__envstyle/icon-192.png",
-			"/__envstyle/icon-512.png",
 		]);
 	});
 
