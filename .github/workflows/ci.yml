@@ -16,7 +16,15 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # examples typecheck against the built package (env.style/vite, /tanstack-start)
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test
+      # examples are standalone (own lockfile + workspace), validated separately
+      # against the just-built package (linked via link:../../packages/env.style)
+      - name: Install and typecheck examples
+        run: |
+          for dir in examples/*/; do
+            echo "::group::$dir"
+            (cd "$dir" && pnpm install --frozen-lockfile && pnpm run --if-present typecheck)
+            echo "::endgroup::"
+          done
