@@ -237,111 +237,34 @@ function run(cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv) {
 	});
 }
 
-// Live status table on a TTY, plain per-scenario lines otherwise (CI logs
-// would render the redraw escape codes as garbage). Redraws in place. When
-// the table is taller than the viewport a full repaint would scroll forever,
-// since cursor-up can't cross the screen top, so completed rows collapse into
-// the header counter and only active rows render.
-const TTY = process.stdout.isTTY === true;
-const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-const REDRAW_INTERVAL_MS = 80;
-
-type Row = {
-	app: string;
-	provider: string;
-	status: "pending" | "running" | "ok" | "fail";
-	ms?: number;
-};
-
-const rows: Row[] = Object.entries(APPS).flatMap(([app, { scenarios }]) =>
-	scenarios.map((s): Row => ({ app, provider: s.provider, status: "pending" })),
-);
-const finished: Row[] = []; // in completion order, for the collapsed view
+// build logs are buffered and printed only on failure, so the parallel app
+// chains don't interleave their output mid-run
 const failureOutputs: string[] = [];
-
-const APP_COL_WIDTH = Math.max(...rows.map((r) => r.app.length));
-const PROVIDER_COL_WIDTH = Math.max(...rows.map((r) => r.provider.length));
-
-let spinnerFrame = 0;
-function formatRow(row: Row): string {
-	const icon = {
-		pending: "\x1b[2m·\x1b[0m",
-		running: `\x1b[36m${SPINNER_FRAMES[spinnerFrame % SPINNER_FRAMES.length]}\x1b[0m`,
-		ok: "\x1b[32m✔\x1b[0m",
-		fail: "\x1b[31m✘\x1b[0m",
-	}[row.status];
-	const time =
-		row.ms === undefined ? "" : `\x1b[2m${(row.ms / 1000).toFixed(1)}s\x1b[0m`;
-	return ` ${icon} ${row.app.padEnd(APP_COL_WIDTH)}  ${row.provider.padEnd(PROVIDER_COL_WIDTH)}  ${time}`;
-}
-
-let lastFrameLineCount = 0;
-function redrawTable(): void {
-	spinnerFrame++;
-	const done = rows.filter((r) => r.status === "ok").length;
-	const failed = rows.filter((r) => r.status === "fail").length;
-	const runningRows = rows.filter((r) => r.status === "running");
-	const queued = rows.filter((r) => r.status === "pending").length;
-	let stats = `${done}/${rows.length} ok · ${runningRows.length} running · ${queued} queued`;
-	if (failed > 0) stats += ` · \x1b[0m\x1b[31m${failed} failed\x1b[0m\x1b[2m`;
-	const header = `\x1b[1mbuild scenarios\x1b[0m  \x1b[2m${stats}\x1b[0m`;
-
-	// total frame lines must stay under the viewport height, or cursor-up
-	// clamps at the screen top and every repaint appends instead of replacing
-	const lineBudget = Math.max(4, (process.stdout.rows || 24) - 2);
-	let body: string[];
-	if (rows.length + 1 <= lineBudget) {
-		body = rows.map(formatRow);
-	} else {
-		// log-style window: recent finishes scroll up checked-off, every
-		// running spinner stays pinned at the bottom, queue lives in the header
-		const finishedSlots = Math.max(0, lineBudget - 1 - runningRows.length);
-		body = [...finished.slice(-finishedSlots), ...runningRows].map(formatRow);
-	}
-
-	const lines = [header, ...body];
-	let frame = lastFrameLineCount > 0 ? `\x1b[${lastFrameLineCount}A` : "";
-	frame += lines.map((line) => `\x1b[2K${line}\n`).join("");
-	frame += "\x1b[0J"; // wipe leftovers when this frame is shorter than the last
-	process.stdout.write(frame);
-	lastFrameLineCount = lines.length;
-}
 
 async function runApp(app: string) {
 	const { build, scenarios, verify } = APPS[app];
 	const dir = path.resolve("examples", app);
-	const appRows = rows.filter((r) => r.app === app);
-	for (const [index, scenario] of scenarios.entries()) {
+	for (const scenario of scenarios) {
 		const label = `${app} / ${scenario.provider}`;
-		const row = appRows[index];
-		row.status = "running";
 		const started = Date.now();
-		try {
-			// stale artifacts from a previous scenario must not satisfy assertions
-			for (const stale of [".next", "dist", ".output", `public/${OUT_DIR}`]) {
-				rmSync(path.join(dir, stale), { recursive: true, force: true });
-			}
-			const env = { ...process.env };
-			for (const key of DETECTION_VARS) delete env[key];
-			Object.assign(env, scenario.env);
-
-			const [cmd, ...args] = build;
-			const result = await run(cmd, args, dir, env);
-			if (result.status !== 0) {
-				failureOutputs.push(result.output);
-				throw new Error(`build failed: ${label}`);
-			}
-			verify(dir, scenario, label);
-			row.status = "ok";
-			row.ms = Date.now() - started;
-			finished.push(row);
-			if (!TTY) console.log(`ok  ${label} (${(row.ms / 1000).toFixed(1)}s)`);
-		} catch (error) {
-			row.status = "fail";
-			row.ms = Date.now() - started;
-			finished.push(row);
-			throw error;
+		// stale artifacts from a previous scenario must not satisfy assertions
+		for (const stale of [".next", "dist", ".output", `public/${OUT_DIR}`]) {
+			rmSync(path.join(dir, stale), { recursive: true, force: true });
 		}
+		const env = { ...process.env };
+		for (const key of DETECTION_VARS) delete env[key];
+		Object.assign(env, scenario.env);
+
+		const [cmd, ...args] = build;
+		const result = await run(cmd, args, dir, env);
+		if (result.status !== 0) {
+			failureOutputs.push(result.output);
+			throw new Error(`build failed: ${label}`);
+		}
+		verify(dir, scenario, label);
+		console.log(
+			`ok  ${label} (${((Date.now() - started) / 1000).toFixed(1)}s)`,
+		);
 	}
 	return scenarios.length;
 }
@@ -376,22 +299,7 @@ for (const match of envSource.matchAll(/env\?\.([A-Z][A-Z0-9_]*)/g)) {
 	);
 }
 
-let redrawTimer: NodeJS.Timeout | undefined;
-if (TTY) {
-	process.stdout.write("\x1b[?25l"); // hide cursor during redraws
-	process.on("SIGINT", () => {
-		process.stdout.write("\x1b[?25h");
-		process.exit(130);
-	});
-	redrawTable();
-	redrawTimer = setInterval(redrawTable, REDRAW_INTERVAL_MS);
-}
 const results = await Promise.allSettled(Object.keys(APPS).map(runApp));
-if (redrawTimer) {
-	clearInterval(redrawTimer);
-	redrawTable();
-	process.stdout.write("\x1b[?25h");
-}
 for (const output of failureOutputs) console.error(output);
 const failures = results.filter((r) => r.status === "rejected");
 for (const f of failures) console.error(String(f.reason));
