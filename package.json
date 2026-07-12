@@ -1,6 +1,7 @@
 {
 	"name": "env.style-monorepo",
 	"private": true,
+	"type": "module",
 	"packageManager": "pnpm@10.19.0",
 	"scripts": {
 		"build": "pnpm --filter env.style build",
