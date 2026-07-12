@@ -8,7 +8,8 @@
 		"test": "pnpm --filter env.style test",
 		"format": "biome format --write .",
 		"lint": "biome check .",
-		"test:visual": "node scripts/visual-test.ts"
+		"test:visual": "node scripts/visual-test.ts",
+		"test:builds": "node scripts/build-scenarios.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.2"

@@ -28,3 +28,6 @@ jobs:
             (cd "$dir" && pnpm install --frozen-lockfile && pnpm run --if-present typecheck)
             echo "::endgroup::"
           done
+      # builds every example under simulated provider envs and asserts on the
+      # output (tinted icon, Next.js rewrites) — replaces live preview deploys
+      - run: pnpm test:builds
