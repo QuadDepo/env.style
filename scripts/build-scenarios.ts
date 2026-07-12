@@ -10,7 +10,13 @@
 // scenarios sequentially; the three app chains run in parallel.
 import assert from "node:assert";
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync, rmSync, statSync } from "node:fs";
+import {
+	existsSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	statSync,
+} from "node:fs";
 import path from "node:path";
 import {
 	OUT_DIR,
@@ -253,6 +259,35 @@ async function runApp(app: string) {
 		console.log(`ok  ${label}`);
 	}
 	return scenarios.length;
+}
+
+// Drift guards: fail fast when reality outgrows this script.
+const exampleDirs = readdirSync("examples", { withFileTypes: true })
+	.filter((entry) => entry.isDirectory())
+	.map((entry) => entry.name)
+	.sort();
+assert.deepEqual(
+	exampleDirs,
+	Object.keys(APPS).sort(),
+	"examples/ and the APPS table have drifted — every example needs an APPS entry",
+);
+
+const envSource = readFileSync("packages/env.style/src/env.ts", "utf8");
+const exercised = new Set(
+	Object.values(APPS).flatMap(({ scenarios }) =>
+		scenarios.flatMap((s) => Object.keys(s.env)),
+	),
+);
+for (const match of envSource.matchAll(/env\?\.([A-Z][A-Z0-9_]*)/g)) {
+	const name = match[1];
+	assert.ok(
+		DETECTION_VARS.includes(name),
+		`env.ts reads ${name} but DETECTION_VARS doesn't scrub it`,
+	);
+	assert.ok(
+		exercised.has(name),
+		`env.ts reads ${name} but no build scenario exercises it`,
+	);
 }
 
 const results = await Promise.allSettled(Object.keys(APPS).map(runApp));
