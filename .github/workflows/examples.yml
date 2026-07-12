@@ -1,7 +1,7 @@
 # Validates the standalone examples: install, typecheck, then build-output
 # scenarios (scripts/build-scenarios.ts). Path-filtered so site-only changes
-# (apps/web) skip it — but example and library changes always run it, since
-# these scenarios are the only validation the examples have.
+# (apps/web) skip it. Example and library changes always run it, since these
+# scenarios are the only validation the examples have.
 name: Examples
 
 on:
@@ -41,5 +41,5 @@ jobs:
             echo "::endgroup::"
           done
       # builds every example under simulated provider envs and asserts on the
-      # output (tinted icon, Next.js rewrites) — replaces live preview deploys
+      # output (tinted icon, Next.js rewrites) instead of a live preview deploy
       - run: pnpm test:builds

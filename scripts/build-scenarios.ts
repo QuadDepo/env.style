@@ -1,11 +1,11 @@
-// Builds each example under simulated provider environments and asserts on the
-// build OUTPUT instead of a live deployment: styled envs must emit the tinted
+// Builds each example under simulated provider env vars and asserts on the
+// build output instead of a live deployment: styled envs must emit the tinted
 // icon (and, for Next.js, the favicon rewrites in routes-manifest.json);
 // production builds must leave zero footprint.
 //
-// The FULL provider matrix runs against vite-react (~2s per build); nextjs and
-// tanstack-start get one styled + one production pair each, since provider
-// detection is identical across frameworks — only the plugin wiring differs.
+// The full provider matrix runs against vite-react (~2s per build). nextjs
+// and tanstack-start get one styled + one production pair each, since provider
+// detection is shared code; only the plugin wiring differs per framework.
 // Builds inside one example dir share .next/dist, so each app runs its
 // scenarios sequentially; the three app chains run in parallel.
 import assert from "node:assert";
@@ -23,8 +23,8 @@ import {
 	TINTED_ICON_URL,
 } from "../packages/env.style/src/constants.ts";
 
-// Every env var detectEnv reads — scrubbed so the host machine/CI can't leak
-// an environment into a scenario.
+// Every env var detectEnv reads, scrubbed so the host machine or CI can't
+// leak an environment into a scenario.
 const DETECTION_VARS = [
 	"ENV_STYLES_ENV",
 	"VERCEL_TARGET_ENV",
@@ -51,7 +51,8 @@ type Scenario = {
 	styled: boolean;
 };
 
-// One styled + one production case per provider, mirroring detectEnv.
+// Mirrors detectEnv: every provider's styled signal, plus a production case
+// where the provider can signal one.
 const PROVIDER_MATRIX: Scenario[] = [
 	{
 		provider: "explicit ENV_STYLES_ENV",
@@ -237,9 +238,9 @@ function run(cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv) {
 }
 
 // Live status table on a TTY, plain per-scenario lines otherwise (CI logs
-// would render the redraw escape codes as garbage). Redraws in place; when
-// the table is taller than the viewport (cursor-up can't cross the screen
-// top, so a full repaint would scroll forever), completed rows collapse into
+// would render the redraw escape codes as garbage). Redraws in place. When
+// the table is taller than the viewport a full repaint would scroll forever,
+// since cursor-up can't cross the screen top, so completed rows collapse into
 // the header counter and only active rows render.
 const TTY = process.stdout.isTTY === true;
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -248,23 +249,15 @@ const REDRAW_INTERVAL_MS = 80;
 type Row = {
 	app: string;
 	provider: string;
-	status: "pending" | "running" | "ok" | "fail" | "skip";
+	status: "pending" | "running" | "ok" | "fail";
 	ms?: number;
-	/** completion order, so collapsed mode can show the most recent finishes */
-	seq?: number;
 };
-let finishedCount = 0;
 
 const rows: Row[] = Object.entries(APPS).flatMap(([app, { scenarios }]) =>
 	scenarios.map((s): Row => ({ app, provider: s.provider, status: "pending" })),
 );
+const finished: Row[] = []; // in completion order, for the collapsed view
 const failureOutputs: string[] = [];
-
-function rowFor(app: string, provider: string): Row {
-	const row = rows.find((r) => r.app === app && r.provider === provider);
-	assert.ok(row, `no table row for ${app} / ${provider}`);
-	return row;
-}
 
 const APP_COL_WIDTH = Math.max(...rows.map((r) => r.app.length));
 const PROVIDER_COL_WIDTH = Math.max(...rows.map((r) => r.provider.length));
@@ -276,7 +269,6 @@ function formatRow(row: Row): string {
 		running: `\x1b[36m${SPINNER_FRAMES[spinnerFrame % SPINNER_FRAMES.length]}\x1b[0m`,
 		ok: "\x1b[32m✔\x1b[0m",
 		fail: "\x1b[31m✘\x1b[0m",
-		skip: "\x1b[2m↓\x1b[0m",
 	}[row.status];
 	const time =
 		row.ms === undefined ? "" : `\x1b[2m${(row.ms / 1000).toFixed(1)}s\x1b[0m`;
@@ -303,9 +295,6 @@ function redrawTable(): void {
 	} else {
 		// log-style window: recent finishes scroll up checked-off, every
 		// running spinner stays pinned at the bottom, queue lives in the header
-		const finished = rows
-			.filter((r) => r.seq !== undefined)
-			.sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
 		const finishedSlots = Math.max(0, lineBudget - 1 - runningRows.length);
 		body = [...finished.slice(-finishedSlots), ...runningRows].map(formatRow);
 	}
@@ -321,9 +310,10 @@ function redrawTable(): void {
 async function runApp(app: string) {
 	const { build, scenarios, verify } = APPS[app];
 	const dir = path.resolve("examples", app);
+	const appRows = rows.filter((r) => r.app === app);
 	for (const [index, scenario] of scenarios.entries()) {
 		const label = `${app} / ${scenario.provider}`;
-		const row = rowFor(app, scenario.provider);
+		const row = appRows[index];
 		row.status = "running";
 		const started = Date.now();
 		try {
@@ -344,24 +334,20 @@ async function runApp(app: string) {
 			verify(dir, scenario, label);
 			row.status = "ok";
 			row.ms = Date.now() - started;
-			row.seq = ++finishedCount;
+			finished.push(row);
 			if (!TTY) console.log(`ok  ${label} (${(row.ms / 1000).toFixed(1)}s)`);
 		} catch (error) {
 			row.status = "fail";
 			row.ms = Date.now() - started;
-			row.seq = ++finishedCount;
-			for (const rest of scenarios.slice(index + 1)) {
-				const skipped = rowFor(app, rest.provider);
-				skipped.status = "skip";
-				skipped.seq = ++finishedCount;
-			}
+			finished.push(row);
 			throw error;
 		}
 	}
 	return scenarios.length;
 }
 
-// Drift guards: fail fast when reality outgrows this script.
+// Drift guards: a new example dir or a new provider var in env.ts must fail
+// this script until it covers them.
 const exampleDirs = readdirSync("examples", { withFileTypes: true })
 	.filter((entry) => entry.isDirectory())
 	.map((entry) => entry.name)
@@ -369,7 +355,7 @@ const exampleDirs = readdirSync("examples", { withFileTypes: true })
 assert.deepEqual(
 	exampleDirs,
 	Object.keys(APPS).sort(),
-	"examples/ and the APPS table have drifted — every example needs an APPS entry",
+	"examples/ and the APPS table have drifted; every example needs an APPS entry",
 );
 
 const envSource = readFileSync("packages/env.style/src/env.ts", "utf8");
