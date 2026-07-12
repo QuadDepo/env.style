@@ -19,15 +19,4 @@ jobs:
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test
-      # examples are standalone (own lockfile + workspace), validated separately
-      # against the just-built package (linked via link:../../packages/env.style)
-      - name: Install and typecheck examples
-        run: |
-          for dir in examples/*/; do
-            echo "::group::$dir"
-            (cd "$dir" && pnpm install --frozen-lockfile && pnpm run --if-present typecheck)
-            echo "::endgroup::"
-          done
-      # builds every example under simulated provider envs and asserts on the
-      # output (tinted icon, Next.js rewrites) — replaces live preview deploys
-      - run: pnpm test:builds
+      # examples are standalone and validated by the path-filtered Examples workflow
