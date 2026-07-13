@@ -5,6 +5,7 @@
 	"scripts": {
 		"dev": "vite --host 127.0.0.1 --port 3124",
 		"build": "tsc --noEmit && ENV_STYLES_ENV=development vite build",
+		"typecheck": "tsc --noEmit",
 		"preview": "vite preview --host 127.0.0.1 --port 3124"
 	},
 	"dependencies": {
