@@ -12,6 +12,8 @@ on:
       - "examples/**"
       - "scripts/build-scenarios.ts"
       - "pnpm-lock.yaml"
+      - "package.json"
+      - "pnpm-workspace.yaml"
       - ".github/workflows/examples.yml"
   pull_request:
     paths:
@@ -19,6 +21,8 @@ on:
       - "examples/**"
       - "scripts/build-scenarios.ts"
       - "pnpm-lock.yaml"
+      - "package.json"
+      - "pnpm-workspace.yaml"
       - ".github/workflows/examples.yml"
 
 jobs:
