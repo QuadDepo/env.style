@@ -144,6 +144,54 @@ describe("withEnvStyles", () => {
 		]);
 	});
 
+	it("routes apple touch icons to 192px only when PWA output is enabled", async () => {
+		await mkdir(path.join(dir, "public"), { recursive: true });
+		await writeFile(
+			path.join(dir, "public/apple-touch-icon.png"),
+			await squarePng({ r: 255, g: 255, b: 255 }),
+		);
+		const pwaConfig = await resolve(withEnvStyles({}, DEV));
+		expect((await beforeFiles(pwaConfig)).beforeFiles).toContainEqual({
+			source: "/apple-touch-icon.png",
+			destination: "/__envstyle/icon-192.png",
+		});
+
+		const faviconConfig = await resolve(
+			withEnvStyles({}, { ...DEV, pwa: false }),
+		);
+		expect((await beforeFiles(faviconConfig)).beforeFiles).toContainEqual({
+			source: "/apple-touch-icon.png",
+			destination: "/__envstyle/icon.png",
+		});
+	});
+
+	it("rewrites known same-origin static manifest icons before favicon rules", async () => {
+		await mkdir(path.join(dir, "public"), { recursive: true });
+		await writeFile(
+			path.join(dir, "public/manifest.json"),
+			JSON.stringify({
+				icons: [
+					{ src: "/favicon.ico", sizes: "192x192" },
+					{ src: "/pwa-512.png?version=1", sizes: "512x512" },
+					{ src: "https://cdn.example.com/icon.png", sizes: "192x192" },
+					{ src: "//cdn.example.com/icon.png", sizes: "192x192" },
+					{ src: "/unknown.png", sizes: "128x128" },
+				],
+			}),
+		);
+		const config = await resolve(withEnvStyles({}, DEV));
+		const rewrites = (await beforeFiles(config)).beforeFiles;
+		expect(rewrites[0]).toEqual({
+			source: "/favicon.ico",
+			destination: "/__envstyle/icon-192.png",
+		});
+		expect(rewrites[1]).toEqual({
+			source: "/pwa-512.png",
+			destination: "/__envstyle/icon-512.png",
+		});
+		expect(rewrites).toHaveLength(2);
+	});
+
 	it("preserves array-form user rewrites as afterFiles", async () => {
 		const user = { source: "/a", destination: "/b" };
 		const config = await resolve(

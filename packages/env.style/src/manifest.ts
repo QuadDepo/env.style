@@ -3,6 +3,7 @@ import {
 	TINTED_ICON_512_URL,
 	TINTED_ICON_URL,
 } from "./constants";
+import { detectEnv, type EnvStylesOptions } from "./env";
 
 /**
  * Size-mapped icon URLs for PWA manifests.
@@ -53,7 +54,7 @@ export interface Manifest {
  * }
  * ```
  */
-export function envStyleManifest<T extends Manifest>(manifest: T): T {
+export function rewriteManifestIcons<T extends Manifest>(manifest: T): T {
 	if (!manifest.icons) return manifest;
 
 	return {
@@ -63,4 +64,22 @@ export function envStyleManifest<T extends Manifest>(manifest: T): T {
 			return tintedUrl ? { ...icon, src: tintedUrl } : icon;
 		}),
 	};
+}
+
+export function envStyleManifest<T extends Manifest>(
+	manifest: T,
+	options: EnvStylesOptions = {},
+): T {
+	const environment = detectEnv(options.environment, () =>
+		typeof process !== "undefined" && process.env.NODE_ENV === "development"
+			? "development"
+			: "production",
+	);
+	if (
+		options.enabled === false ||
+		options.pwa === false ||
+		environment === "production"
+	)
+		return manifest;
+	return rewriteManifestIcons(manifest);
 }

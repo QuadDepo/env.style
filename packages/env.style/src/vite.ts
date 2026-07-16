@@ -14,6 +14,7 @@ import {
 	resolveIcon,
 	validateColorOptions,
 } from "./env";
+import { type Manifest, rewriteManifestIcons } from "./manifest";
 import {
 	customIconPng,
 	customIconsPng,
@@ -131,7 +132,7 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 		},
 		transformIndexHtml(html) {
 			if (!active) return html;
-			let out = rewriteIconLinks(html);
+			let out = rewriteIconLinks(html, options.pwa !== false);
 			if (options.pwa !== false)
 				out = rewriteManifestLink(out, rewrittenManifests);
 			return out;
@@ -172,19 +173,9 @@ export function envStyle(options: EnvStylesOptions = {}): Plugin {
 					if (existsSync(manifestPath)) {
 						try {
 							const content = readFileSync(manifestPath, "utf-8");
-							const manifest = JSON.parse(content);
-							if (manifest.icons) {
-								manifest.icons = manifest.icons.map(
-									(icon: { src: string; sizes?: string }) => {
-										const size = icon.sizes;
-										if (size === "192x192")
-											return { ...icon, src: TINTED_ICON_192_URL };
-										if (size === "512x512")
-											return { ...icon, src: TINTED_ICON_512_URL };
-										return icon;
-									},
-								);
-							}
+							const manifest = rewriteManifestIcons(
+								JSON.parse(content) as Manifest,
+							);
 							res.statusCode = 200;
 							res.setHeader("Content-Type", "application/manifest+json");
 							res.setHeader("Cache-Control", "no-store");
@@ -207,15 +198,16 @@ function viteIconCandidates(root: string, publicDir: string): string[] {
 	);
 }
 
-function rewriteIconLinks(html: string): string {
+function rewriteIconLinks(html: string, pwa: boolean): string {
 	let found = false;
 	const out = html.replace(/<link\b[^>]*>/gi, (tag) => {
 		const rel =
 			/\brel=(["'])(.*?)\1/i.exec(tag)?.[2].toLowerCase().split(/\s+/) ?? [];
 		if (!rel.includes("icon") && !rel.includes("apple-touch-icon")) return tag;
-		found = true;
 		// Use 192px icon for apple-touch-icon, standard icon for others
 		const isAppleTouch = rel.includes("apple-touch-icon");
+		if (isAppleTouch && !pwa) return tag;
+		found = true;
 		const targetUrl = isAppleTouch ? TINTED_ICON_192_URL : TINTED_ICON_URL;
 		if (/\bhref=(["'])[^"']*\1/i.test(tag)) {
 			return tag.replace(
@@ -261,16 +253,8 @@ function rewriteManifestFiles(publicDir: string): Set<string> {
 		if (!existsSync(manifestPath)) continue;
 		try {
 			const content = readFileSync(manifestPath, "utf-8");
-			const manifest = JSON.parse(content);
+			const manifest = rewriteManifestIcons(JSON.parse(content) as Manifest);
 			if (!manifest.icons) continue;
-			manifest.icons = manifest.icons.map(
-				(icon: { src: string; sizes?: string }) => {
-					const size = icon.sizes;
-					if (size === "192x192") return { ...icon, src: TINTED_ICON_192_URL };
-					if (size === "512x512") return { ...icon, src: TINTED_ICON_512_URL };
-					return icon;
-				},
-			);
 			const outDir = path.join(publicDir, "__envstyle");
 			mkdirSync(outDir, { recursive: true });
 			writeFileSync(

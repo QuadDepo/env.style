@@ -169,6 +169,7 @@ describe("envStyle", () => {
 			path.join(dir, "public/site.webmanifest"),
 			JSON.stringify({
 				icons: [
+					{ src: "/old-64.png", sizes: "64x64" },
 					{ src: "/old-192.png", sizes: "192x192" },
 					{ src: "/old-512.png", sizes: "512x512" },
 				],
@@ -184,6 +185,7 @@ describe("envStyle", () => {
 			),
 		);
 		expect(generated.icons.map((icon: { src: string }) => icon.src)).toEqual([
+			"/__envstyle/icon.png",
 			"/__envstyle/icon-192.png",
 			"/__envstyle/icon-512.png",
 		]);
@@ -226,6 +228,12 @@ describe("envStyle", () => {
 		);
 		const original = '<link rel="manifest" href="/manifest.json">';
 		expect(await p.transformIndexHtml(original)).toContain(original);
+		const apple = '<link rel="apple-touch-icon" href="/apple.png">';
+		const transformed = await p.transformIndexHtml(apple);
+		expect(transformed).toContain(apple);
+		expect(transformed).toContain(
+			'<link rel="icon" href="/__envstyle/icon.png">',
+		);
 	});
 
 	it("serves the per-env icon map entry for the active env", async () => {
