@@ -7,13 +7,13 @@
 	},
 	"dependencies": {
 		"env.style": "link:../../packages/env.style",
-		"next": "catalog:",
-		"react": "catalog:",
-		"react-dom": "catalog:"
+		"next": "^16.2.10",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0"
 	},
 	"devDependencies": {
-		"@types/node": "catalog:",
-		"@types/react": "catalog:",
-		"typescript": "catalog:"
+		"@types/node": "^26.1.0",
+		"@types/react": "^19.2.17",
+		"typescript": "^5.9.3"
 	}
 }

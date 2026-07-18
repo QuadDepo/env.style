@@ -5,19 +5,20 @@
 	"scripts": {
 		"dev": "vite --host 127.0.0.1 --port 3124",
 		"build": "tsc --noEmit && ENV_STYLES_ENV=development vite build",
+		"typecheck": "tsc --noEmit",
 		"preview": "vite preview --host 127.0.0.1 --port 3124"
 	},
 	"dependencies": {
 		"env.style": "link:../../packages/env.style",
-		"react": "catalog:",
-		"react-dom": "catalog:"
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0"
 	},
 	"devDependencies": {
-		"@types/node": "catalog:",
-		"@types/react": "catalog:",
-		"@types/react-dom": "catalog:",
+		"@types/node": "^26.1.0",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^6.0.3",
-		"typescript": "catalog:",
-		"vite": "catalog:"
+		"typescript": "^5.9.3",
+		"vite": "^8.1.3"
 	}
 }

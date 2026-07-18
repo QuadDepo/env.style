@@ -22,6 +22,16 @@
 				"default": "./dist/index.cjs"
 			}
 		},
+		"./manifest": {
+			"import": {
+				"types": "./dist/manifest.d.ts",
+				"default": "./dist/manifest.js"
+			},
+			"require": {
+				"types": "./dist/manifest.d.cts",
+				"default": "./dist/manifest.cjs"
+			}
+		},
 		"./vite": {
 			"import": {
 				"types": "./dist/vite.d.ts",
@@ -64,7 +74,7 @@
 		"node": ">=18.17.0"
 	},
 	"scripts": {
-		"build": "tsup src/index.ts src/vite.ts src/tanstack-start.ts src/sveltekit.ts --format esm,cjs --dts",
+		"build": "tsup src/index.ts src/vite.ts src/tanstack-start.ts src/manifest.ts src/sveltekit.ts --format esm,cjs --dts",
 		"prepublishOnly": "pnpm build",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",

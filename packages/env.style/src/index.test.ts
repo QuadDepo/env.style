@@ -4,6 +4,7 @@ import path from "node:path";
 import type { NextConfig } from "next";
 import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { detectEnv } from "./env";
 import { type NextConfigInput, withEnvStyles } from "./index";
 
 let dir: string;
@@ -106,6 +107,21 @@ describe("withEnvStyles", () => {
 		});
 	});
 
+	it("only generates the favicon when pwa is false", async () => {
+		const config = await resolve(withEnvStyles({}, { ...DEV, pwa: false }));
+
+		expect(
+			await readFile(path.join(dir, "public/__envstyle/icon.png")),
+		).toBeTruthy();
+		await expect(
+			readFile(path.join(dir, "public/__envstyle/icon-192.png")),
+		).rejects.toMatchObject({ code: "ENOENT" });
+		const { beforeFiles: ours } = await beforeFiles(config);
+		expect(ours).toEqual([
+			{ source: "/favicon.ico", destination: "/__envstyle/icon.png" },
+		]);
+	});
+
 	it("intercepts every existing candidate icon URL", async () => {
 		await mkdir(path.join(dir, "app"), { recursive: true });
 		await writeFile(path.join(dir, "app/favicon.ico"), "");
@@ -127,6 +143,54 @@ describe("withEnvStyles", () => {
 			"/favicon.ico",
 			"/icon.png",
 		]);
+	});
+
+	it("routes apple touch icons to 192px only when PWA output is enabled", async () => {
+		await mkdir(path.join(dir, "public"), { recursive: true });
+		await writeFile(
+			path.join(dir, "public/apple-touch-icon.png"),
+			await squarePng({ r: 255, g: 255, b: 255 }),
+		);
+		const pwaConfig = await resolve(withEnvStyles({}, DEV));
+		expect((await beforeFiles(pwaConfig)).beforeFiles).toContainEqual({
+			source: "/apple-touch-icon.png",
+			destination: "/__envstyle/icon-192.png",
+		});
+
+		const faviconConfig = await resolve(
+			withEnvStyles({}, { ...DEV, pwa: false }),
+		);
+		expect((await beforeFiles(faviconConfig)).beforeFiles).toContainEqual({
+			source: "/apple-touch-icon.png",
+			destination: "/__envstyle/icon.png",
+		});
+	});
+
+	it("rewrites known same-origin static manifest icons before favicon rules", async () => {
+		await mkdir(path.join(dir, "public"), { recursive: true });
+		await writeFile(
+			path.join(dir, "public/manifest.json"),
+			JSON.stringify({
+				icons: [
+					{ src: "/favicon.ico", sizes: "192x192" },
+					{ src: "/pwa-512.png?version=1", sizes: "512x512" },
+					{ src: "https://cdn.example.com/icon.png", sizes: "192x192" },
+					{ src: "//cdn.example.com/icon.png", sizes: "192x192" },
+					{ src: "/unknown.png", sizes: "128x128" },
+				],
+			}),
+		);
+		const config = await resolve(withEnvStyles({}, DEV));
+		const rewrites = (await beforeFiles(config)).beforeFiles;
+		expect(rewrites[0]).toEqual({
+			source: "/favicon.ico",
+			destination: "/__envstyle/icon-192.png",
+		});
+		expect(rewrites[1]).toEqual({
+			source: "/pwa-512.png",
+			destination: "/__envstyle/icon-512.png",
+		});
+		expect(rewrites).toHaveLength(2);
 	});
 
 	it("preserves array-form user rewrites as afterFiles", async () => {
@@ -356,6 +420,110 @@ describe("withEnvStyles", () => {
 			vi.stubEnv("VERCEL_TARGET_ENV", "qa");
 			const config = await resolve(withEnvStyles({}));
 			expect(config.rewrites).toBeDefined();
+		});
+
+		it("CLOUDFLARE_ENV is detected", () => {
+			vi.stubEnv("CLOUDFLARE_ENV", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("RAILWAY_ENVIRONMENT is detected", () => {
+			vi.stubEnv("RAILWAY_ENVIRONMENT", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("keeps ordinary Render deployments in production", () => {
+			vi.stubEnv("RENDER", "true");
+			expect(detectEnv(undefined, () => "development")).toBe("production");
+		});
+
+		it("FLY_ENV is detected", () => {
+			vi.stubEnv("FLY_ENV", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("ZEROPS_ENV is detected", () => {
+			vi.stubEnv("ZEROPS_ENV", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("SEVALLA_ENV is detected", () => {
+			vi.stubEnv("SEVALLA_ENV", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("CONTEXT (Netlify) is detected", () => {
+			vi.stubEnv("CONTEXT", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("keeps the Deno production timeline in production", () => {
+			vi.stubEnv("DENO_DEPLOY", "true");
+			vi.stubEnv("DENO_TIMELINE", "production");
+			expect(detectEnv(undefined, () => "development")).toBe("production");
+		});
+
+		it("keeps ordinary Heroku dynos in production", () => {
+			vi.stubEnv("DYNO", "web.1");
+			expect(detectEnv(undefined, () => "development")).toBe("production");
+		});
+
+		it("does not infer an environment from a Coolify branch name", () => {
+			vi.stubEnv("COOLIFY_BRANCH", "main");
+			expect(detectEnv(undefined, () => "production")).toBe("production");
+			expect(detectEnv(undefined, () => "development")).toBe("development");
+		});
+
+		it("DO_ENV is detected", () => {
+			vi.stubEnv("DO_ENV", "production");
+			const config = {};
+			expect(withEnvStyles(config)).toBe(config);
+		});
+
+		it("normalizes Netlify deploy-preview to preview", () => {
+			vi.stubEnv("CONTEXT", "deploy-preview");
+			expect(typeof withEnvStyles({})).toBe("function");
+		});
+
+		it("normalizes Netlify branch-deploy to development", () => {
+			vi.stubEnv("CONTEXT", "branch-deploy");
+			expect(typeof withEnvStyles({})).toBe("function");
+		});
+
+		it("normalizes Netlify dev to development", () => {
+			vi.stubEnv("CONTEXT", "dev");
+			expect(typeof withEnvStyles({})).toBe("function");
+		});
+
+		it("normalizes Render pull requests to preview", () => {
+			vi.stubEnv("RENDER", "true");
+			vi.stubEnv("IS_PULL_REQUEST", "true");
+			expect(detectEnv(undefined, () => "production")).toBe("preview");
+		});
+
+		it("normalizes Railway PR environments to preview", () => {
+			vi.stubEnv("RAILWAY_ENVIRONMENT", "pr-123");
+			expect(typeof withEnvStyles({})).toBe("function");
+		});
+
+		it("normalizes Heroku review apps to preview", () => {
+			vi.stubEnv("DYNO", "web.1");
+			vi.stubEnv("HEROKU_PR_NUMBER", "123");
+			expect(detectEnv(undefined, () => "production")).toBe("preview");
+		});
+
+		it("normalizes Deno preview and branch timelines", () => {
+			vi.stubEnv("DENO_DEPLOY", "true");
+			vi.stubEnv("DENO_TIMELINE", "preview/revision-123");
+			expect(detectEnv(undefined, () => "production")).toBe("preview");
+			vi.stubEnv("DENO_TIMELINE", "git-branch/feature-x");
+			expect(detectEnv(undefined, () => "production")).toBe("development");
 		});
 	});
 });
