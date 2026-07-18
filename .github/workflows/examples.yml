@@ -1,0 +1,49 @@
+# Validates the standalone examples: install, typecheck, then build-output
+# scenarios (scripts/build-scenarios.ts). Path-filtered so site-only changes
+# (apps/web) skip it. Example and library changes always run it, since these
+# scenarios are the only validation the examples have.
+name: Examples
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/env.style/**"
+      - "examples/**"
+      - "scripts/build-scenarios.ts"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/examples.yml"
+  pull_request:
+    paths:
+      - "packages/env.style/**"
+      - "examples/**"
+      - "scripts/build-scenarios.ts"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/examples.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Install and typecheck examples
+        run: |
+          for dir in examples/*/; do
+            echo "::group::$dir"
+            (cd "$dir" && pnpm install --frozen-lockfile && pnpm run --if-present typecheck)
+            echo "::endgroup::"
+          done
+      # builds every example under simulated provider envs and asserts on the
+      # output (tinted icon, Next.js rewrites) instead of a live preview deploy
+      - run: pnpm test:builds

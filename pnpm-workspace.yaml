@@ -1,7 +1,9 @@
+# examples/* are deliberately not workspace members. They are standalone,
+# copy-paste-able apps with their own lockfiles, linked to the local library
+# via link:../../packages/env.style.
 packages:
   - "packages/*"
   - "apps/*"
-  - "examples/*"
 
 onlyBuiltDependencies:
   - esbuild
