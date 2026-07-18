@@ -1,7 +1,7 @@
 // Builds each example under simulated provider env vars and asserts on the
-// build output instead of a live deployment: styled envs must emit the tinted
-// icon (and, for Next.js, the favicon rewrites in routes-manifest.json);
-// production builds must leave zero footprint.
+// build output instead of a live deployment: styled envs must emit every
+// tinted icon size (and, for Next.js, the favicon rewrites in
+// routes-manifest.json); production builds must leave zero footprint.
 //
 // The full provider matrix runs against vite-react (~2s per build). nextjs
 // and tanstack-start get one styled + one production pair each, since provider
@@ -19,6 +19,7 @@ import {
 } from "node:fs";
 import path from "node:path";
 import {
+	ICON_SIZES,
 	OUT_DIR,
 	TINTED_ICON_URL,
 } from "../packages/env.style/src/constants.ts";
@@ -165,11 +166,7 @@ const APPS: Record<
 			},
 		],
 		verify(dir, s, label) {
-			assertIcon(
-				path.join(dir, "public", OUT_DIR, "icon.png"),
-				s.styled,
-				label,
-			);
+			assertIcons(path.join(dir, "public", OUT_DIR), s.styled, label);
 			const manifest = readFileSync(
 				path.join(dir, ".next", "routes-manifest.json"),
 				"utf8",
@@ -185,7 +182,7 @@ const APPS: Record<
 		build: ["pnpm", "exec", "vite", "build"],
 		scenarios: PROVIDER_MATRIX,
 		verify(dir, s, label) {
-			assertIcon(path.join(dir, "dist", OUT_DIR, "icon.png"), s.styled, label);
+			assertIcons(path.join(dir, "dist", OUT_DIR), s.styled, label);
 			const html = readFileSync(path.join(dir, "dist", "index.html"), "utf8");
 			assert.equal(
 				html.includes(TINTED_ICON_URL),
@@ -205,8 +202,8 @@ const APPS: Record<
 			{ provider: "no platform (default)", env: {}, styled: false },
 		],
 		verify(dir, s, label) {
-			assertIcon(
-				path.join(dir, ".output", "public", OUT_DIR, "icon.png"),
+			assertIcons(
+				path.join(dir, ".output", "public", OUT_DIR),
 				s.styled,
 				label,
 			);
@@ -214,12 +211,18 @@ const APPS: Record<
 	},
 };
 
-function assertIcon(file: string, styled: boolean, label: string) {
-	if (styled) {
+function assertIcons(outDir: string, styled: boolean, label: string) {
+	if (!styled) {
+		assert.ok(!existsSync(outDir), `${label}: unexpected icon dir ${outDir}`);
+		return;
+	}
+	for (const size of ICON_SIZES) {
+		const file = path.join(
+			outDir,
+			size === 64 ? "icon.png" : `icon-${size}.png`,
+		);
 		assert.ok(existsSync(file), `${label}: missing tinted icon ${file}`);
-		assert.ok(statSync(file).size > 0, `${label}: tinted icon is empty`);
-	} else {
-		assert.ok(!existsSync(file), `${label}: unexpected tinted icon ${file}`);
+		assert.ok(statSync(file).size > 0, `${label}: empty tinted icon ${file}`);
 	}
 }
 
