@@ -4,10 +4,24 @@ import path from "node:path";
 import decodeIco from "decode-ico";
 import type { Sharp } from "sharp";
 import { parseHex, type Rgb } from "./color";
-import { DEFAULT_COLOR_OPACITY, OUT_DIR, TINTED_ICON_URL } from "./constants";
+import {
+	DEFAULT_COLOR_OPACITY,
+	ICON_SIZES,
+	type IconSize,
+	OUT_DIR,
+	TINTED_ICON_192_URL,
+	TINTED_ICON_512_URL,
+	TINTED_ICON_URL,
+} from "./constants";
 import { assertColorOpacity } from "./env";
 
-export { OUT_DIR, TINTED_ICON_URL };
+export {
+	ICON_SIZES,
+	OUT_DIR,
+	TINTED_ICON_192_URL,
+	TINTED_ICON_512_URL,
+	TINTED_ICON_URL,
+};
 
 export const SIZE = 64;
 const TOLERANCE = 48; // redmean distance below which a pixel counts as an excluded color and stays untinted
@@ -30,6 +44,24 @@ export async function writeTintedIcon(
 	await writeFile(path.join(outDir, ".gitignore"), "*\n");
 }
 
+/** Filename for a given icon size, e.g. icon-192.png. */
+function iconFilename(size: IconSize): string {
+	return size === 64 ? "icon.png" : `icon-${size}.png`;
+}
+
+/** Write all icon sizes (64, 192, 512) into publicDir/__envstyle/. */
+export async function writeTintedIcons(
+	publicDir: string,
+	icons: Map<IconSize, Buffer>,
+): Promise<void> {
+	const outDir = path.join(publicDir, OUT_DIR);
+	await mkdir(outDir, { recursive: true });
+	for (const [size, buf] of icons) {
+		await writeFile(path.join(outDir, iconFilename(size)), buf);
+	}
+	await writeFile(path.join(outDir, ".gitignore"), "*\n");
+}
+
 /** A custom icon is the user's own env styling — serve it untouched. */
 export async function customIconPng(
 	root: string,
@@ -43,6 +75,27 @@ export async function customIconPng(
 			`env.style: icon "${customIcon}" not readable — falling back to auto-discovery`,
 		);
 	return png;
+}
+
+/** A custom icon at all PWA sizes — serve untouched. */
+export async function customIconsPng(
+	root: string,
+	customIcon?: string,
+): Promise<Map<IconSize, Buffer> | null> {
+	if (!customIcon) return null;
+	const resolved = path.resolve(root, customIcon);
+	if (!existsSync(resolved)) {
+		console.warn(
+			`env.style: icon "${customIcon}" not readable — falling back to auto-discovery`,
+		);
+		return null;
+	}
+	const results = new Map<IconSize, Buffer>();
+	for (const size of ICON_SIZES) {
+		const buf = await toPngBase(resolved, size);
+		if (buf) results.set(size, buf);
+	}
+	return results.size > 0 ? results : null;
 }
 
 /** URL the found icon is conventionally served at, e.g. app/icon.png → /icon.png. */
@@ -61,14 +114,15 @@ export async function tintIcon(
 	color: string,
 	excludeColors: string[] = [],
 	colorOpacity = DEFAULT_COLOR_OPACITY,
+	size: IconSize = 64,
 ): Promise<Buffer> {
 	assertColorOpacity(colorOpacity);
 	const rgba = parseHex(color);
 	const { default: sharp } = await import("sharp");
-	const base = iconPath ? await toPngBase(iconPath) : null;
+	const base = iconPath ? await toPngBase(iconPath, size) : null;
 	if (!base) {
-		const r = SIZE / 2;
-		const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}"><circle cx="${r}" cy="${r}" r="${r - 2}" fill="${color}"/></svg>`;
+		const r = size / 2;
+		const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${r}" cy="${r}" r="${r - 2}" fill="${color}"/></svg>`;
 		return sharp(Buffer.from(svg)).png().toBuffer();
 	}
 	if (excludeColors.length > 0)
@@ -77,11 +131,12 @@ export async function tintIcon(
 			rgba,
 			excludeColors.map(parseHex),
 			colorOpacity,
+			size,
 		);
 	const overlay = await sharp({
 		create: {
-			width: SIZE,
-			height: SIZE,
+			width: size,
+			height: size,
 			channels: 4,
 			background: { ...rgba, alpha: colorOpacity },
 		},
@@ -92,6 +147,23 @@ export async function tintIcon(
 		.composite([{ input: overlay, blend: "atop" }])
 		.png()
 		.toBuffer();
+}
+
+/** Produce tinted icons at all PWA sizes (64, 192, 512). */
+export async function tintAllSizes(
+	iconPath: string | null,
+	color: string,
+	excludeColors: string[] = [],
+	colorOpacity = DEFAULT_COLOR_OPACITY,
+): Promise<Map<IconSize, Buffer>> {
+	const results = new Map<IconSize, Buffer>();
+	for (const size of ICON_SIZES) {
+		results.set(
+			size,
+			await tintIcon(iconPath, color, excludeColors, colorOpacity, size),
+		);
+	}
+	return results;
 }
 
 function redmeanDistance(a: Rgb, b: Rgb): number {
@@ -116,10 +188,15 @@ async function tintWithExcludeMask(
 	tint: Rgb,
 	excludeColors: Rgb[],
 	colorOpacity: number,
+	size: IconSize = 64,
 ): Promise<Buffer> {
 	const { default: sharp } = await import("sharp");
 	const { data, info } = await sharp(base)
 		.ensureAlpha()
+		.resize(size, size, {
+			fit: "contain",
+			background: { r: 0, g: 0, b: 0, alpha: 0 },
+		})
 		.raw()
 		.toBuffer({ resolveWithObject: true });
 	const out = Buffer.from(data);
@@ -144,8 +221,11 @@ async function tintWithExcludeMask(
 		.toBuffer();
 }
 
-/** Decode any supported icon (ico/png/jpg/svg) to a 64px PNG, untinted. */
-export async function toPngBase(iconPath: string): Promise<Buffer | null> {
+/** Decode any supported icon (ico/png/jpg/svg) to a PNG at the given size, untinted. */
+export async function toPngBase(
+	iconPath: string,
+	size: IconSize = 64,
+): Promise<Buffer | null> {
 	try {
 		const { default: sharp } = await import("sharp");
 		const raw = await readFile(iconPath);
@@ -163,7 +243,7 @@ export async function toPngBase(iconPath: string): Promise<Buffer | null> {
 			img = sharp(raw); // png / jpg / svg
 		}
 		return await img
-			.resize(SIZE, SIZE, {
+			.resize(size, size, {
 				fit: "contain",
 				background: { r: 0, g: 0, b: 0, alpha: 0 },
 			})

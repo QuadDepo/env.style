@@ -150,6 +150,92 @@ describe("envStyle", () => {
 		expect(injected).toContain('<link rel="icon" href="/__envstyle/icon.png">');
 	});
 
+	it("rewrites apple touch icons to the 192px asset", async () => {
+		await writeSvg();
+		const p = plugin({ environment: "development" });
+		await p.configResolved(config());
+
+		const html = await p.transformIndexHtml(
+			'<html><head><link rel="apple-touch-icon" href="/apple.png"></head></html>',
+		);
+		expect(html).toContain(
+			'<link rel="apple-touch-icon" href="/__envstyle/icon-192.png">',
+		);
+	});
+
+	it("generates a rewritten manifest before the public directory is copied", async () => {
+		await writeSvg();
+		await writeFile(
+			path.join(dir, "public/site.webmanifest"),
+			JSON.stringify({
+				icons: [
+					{ src: "/old-64.png", sizes: "64x64" },
+					{ src: "/old-192.png", sizes: "192x192" },
+					{ src: "/old-512.png", sizes: "512x512" },
+				],
+			}),
+		);
+		const p = plugin({ environment: "development" });
+		await p.configResolved(config());
+
+		const generated = JSON.parse(
+			await readFile(
+				path.join(dir, "public/__envstyle/site.webmanifest"),
+				"utf8",
+			),
+		);
+		expect(generated.icons.map((icon: { src: string }) => icon.src)).toEqual([
+			"/__envstyle/icon.png",
+			"/__envstyle/icon-192.png",
+			"/__envstyle/icon-512.png",
+		]);
+		const html = await p.transformIndexHtml(
+			'<link rel="manifest" href="/site.webmanifest">',
+		);
+		expect(html).toContain('href="/__envstyle/site.webmanifest"');
+	});
+
+	it("keeps the original manifest link when no rewritten manifest was generated", async () => {
+		await writeSvg();
+		await writeFile(
+			path.join(dir, "public/manifest.json"),
+			JSON.stringify({ name: "No icons" }),
+		);
+		const p = plugin({ environment: "development" });
+		await p.configResolved(config());
+		const original = '<link rel="manifest" href="/manifest.json">';
+		expect(await p.transformIndexHtml(original)).toContain(original);
+		expect(existsSync(path.join(dir, "public/__envstyle/manifest.json"))).toBe(
+			false,
+		);
+	});
+
+	it("disables PWA assets and manifest rewriting when pwa is false", async () => {
+		await writeSvg();
+		await writeFile(
+			path.join(dir, "public/manifest.json"),
+			JSON.stringify({ icons: [{ src: "/old.png", sizes: "192x192" }] }),
+		);
+		const p = plugin({ environment: "development", pwa: false });
+		await p.configResolved(config());
+
+		expect(existsSync(path.join(dir, "public/__envstyle/icon.png"))).toBe(true);
+		expect(existsSync(path.join(dir, "public/__envstyle/icon-192.png"))).toBe(
+			false,
+		);
+		expect(existsSync(path.join(dir, "public/__envstyle/manifest.json"))).toBe(
+			false,
+		);
+		const original = '<link rel="manifest" href="/manifest.json">';
+		expect(await p.transformIndexHtml(original)).toContain(original);
+		const apple = '<link rel="apple-touch-icon" href="/apple.png">';
+		const transformed = await p.transformIndexHtml(apple);
+		expect(transformed).toContain(apple);
+		expect(transformed).toContain(
+			'<link rel="icon" href="/__envstyle/icon.png">',
+		);
+	});
+
 	it("serves the per-env icon map entry for the active env", async () => {
 		await writeSvg();
 		await mkdir(path.join(dir, "public"), { recursive: true });
