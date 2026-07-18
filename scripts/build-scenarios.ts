@@ -209,6 +209,26 @@ const APPS: Record<
 			);
 		},
 	},
+	// RAILWAY_ENVIRONMENT instead of VERCEL_* here: adapter-auto sniffs Vercel's
+	// env vars and would try to resolve @sveltejs/adapter-vercel mid-build.
+	sveltekit: {
+		build: ["pnpm", "exec", "vite", "build"],
+		scenarios: [
+			{
+				provider: "railway pr",
+				env: { RAILWAY_ENVIRONMENT: "pr-42" },
+				styled: true,
+			},
+			{ provider: "no platform (default)", env: {}, styled: false },
+		],
+		verify(dir, s, label) {
+			assertIcons(
+				path.join(dir, ".svelte-kit", "output", "client", OUT_DIR),
+				s.styled,
+				label,
+			);
+		},
+	},
 };
 
 function assertIcons(outDir: string, styled: boolean, label: string) {
@@ -251,7 +271,14 @@ async function runApp(app: string) {
 		const label = `${app} / ${scenario.provider}`;
 		const started = Date.now();
 		// stale artifacts from a previous scenario must not satisfy assertions
-		for (const stale of [".next", "dist", ".output", `public/${OUT_DIR}`]) {
+		for (const stale of [
+			".next",
+			"dist",
+			".output",
+			".svelte-kit/output",
+			`public/${OUT_DIR}`,
+			`static/${OUT_DIR}`,
+		]) {
 			rmSync(path.join(dir, stale), { recursive: true, force: true });
 		}
 		const env = { ...process.env };
