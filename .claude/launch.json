@@ -4,8 +4,26 @@
 		{
 			"name": "site",
 			"runtimeExecutable": "pnpm",
-			"runtimeArgs": ["--dir", "site", "dev"],
+			"runtimeArgs": ["--dir", "apps/web", "dev"],
 			"port": 3125
+		},
+		{
+			"name": "example-nextjs",
+			"runtimeExecutable": "pnpm",
+			"runtimeArgs": ["--dir", "examples/nextjs", "dev"],
+			"port": 3123
+		},
+		{
+			"name": "example-tanstack-start",
+			"runtimeExecutable": "pnpm",
+			"runtimeArgs": ["--dir", "examples/tanstack-start", "dev"],
+			"port": 3125
+		},
+		{
+			"name": "example-vite-react",
+			"runtimeExecutable": "pnpm",
+			"runtimeArgs": ["--dir", "examples/vite-react", "dev"],
+			"port": 3124
 		}
 	]
 }
