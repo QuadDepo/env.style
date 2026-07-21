@@ -16,6 +16,7 @@ const FRAMEWORKS: Record<
 > = {
 	next: { name: "Next.js", icon: NextIcon },
 	vite: { name: "Vite", icon: ViteIcon },
+	waku: { name: "Waku", icon: WakuIcon },
 };
 
 export function FrameworkSelect() {
@@ -34,6 +35,9 @@ export function FrameworkSelect() {
 					</IconFade>
 					<IconFade show={state.file === "vite"}>
 						<ViteIcon className="size-full" />
+					</IconFade>
+					<IconFade show={state.file === "waku"}>
+						<WakuIcon className="size-full" />
 					</IconFade>
 				</span>
 				{name}
@@ -78,5 +82,16 @@ function ViteIcon({ className }: { className?: string }) {
 		>
 			<path d="M13.056 23.238a.57.57 0 0 1-1.02-.355v-5.202c0-.63-.512-1.143-1.144-1.143H5.148a.57.57 0 0 1-.464-.903l3.777-5.29c.54-.753 0-1.804-.93-1.804H.57a.574.574 0 0 1-.543-.746.6.6 0 0 1 .08-.157L5.008.78a.57.57 0 0 1 .467-.24h14.589a.57.57 0 0 1 .466.903l-3.778 5.29c-.54.755 0 1.806.93 1.806h5.745c.238 0 .424.138.513.322a.56.56 0 0 1-.063.603z" />
 		</svg>
+	);
+}
+
+function WakuIcon({ className }: { className?: string }) {
+	return (
+		<span
+			className={`inline-flex items-center justify-center leading-none ${className ?? ""}`}
+			aria-hidden="true"
+		>
+			⛩️
+		</span>
 	);
 }

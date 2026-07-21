@@ -73,7 +73,7 @@ export default function App() {
 						<BrowserPreview />
 					</aside>
 				</main>
-				{/* inside the provider so its framework selector shares the demo's next/vite choice */}
+				{/* inside the provider so its framework selector shares the demo's framework choice */}
 				<OptionsGuide />
 			</DemoProvider>
 			<Cta />

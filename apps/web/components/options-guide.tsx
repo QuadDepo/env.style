@@ -75,6 +75,11 @@ const SCAFFOLD = {
 		close: "    }),\n  ],\n});",
 		indent: "      ",
 	},
+	waku: {
+		open: "export default defineConfig({\n  vite: {\n    plugins: [\n      envStyle({",
+		close: "      }),\n    ],\n  },\n});",
+		indent: "        ",
+	},
 } as const;
 
 // interval for the passive tour that cycles the selection until the user interacts
