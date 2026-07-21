@@ -1,7 +1,7 @@
 {
 	"name": "env.style",
 	"version": "1.0.1",
-	"description": "Environment-tinted favicons for Next.js and Vite — see at a glance whether a tab is dev, preview, staging, or production.",
+	"description": "Environment-tinted favicons for Next.js, Vite, and Waku — see at a glance whether a tab is dev, preview, staging, or production.",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
@@ -51,6 +51,16 @@
 				"types": "./dist/tanstack-start.d.cts",
 				"default": "./dist/tanstack-start.cjs"
 			}
+		},
+		"./waku": {
+			"import": {
+				"types": "./dist/waku.d.ts",
+				"default": "./dist/waku.js"
+			},
+			"require": {
+				"types": "./dist/waku.d.cts",
+				"default": "./dist/waku.cjs"
+			}
 		}
 	},
 	"main": "./dist/index.cjs",
@@ -64,7 +74,7 @@
 		"node": ">=18.17.0"
 	},
 	"scripts": {
-		"build": "tsup src/index.ts src/vite.ts src/tanstack-start.ts src/manifest.ts --format esm,cjs --dts",
+		"build": "tsup src/index.ts src/vite.ts src/tanstack-start.ts src/waku.ts src/manifest.ts --format esm,cjs --dts",
 		"prepublishOnly": "pnpm build",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
@@ -75,6 +85,7 @@
 		"nextjs",
 		"vite",
 		"vite-plugin",
+		"waku",
 		"favicon",
 		"environment",
 		"dx",
@@ -87,10 +98,14 @@
 	},
 	"peerDependencies": {
 		"next": ">=13",
+		"react": ">=19",
 		"vite": ">=5"
 	},
 	"peerDependenciesMeta": {
 		"next": {
+			"optional": true
+		},
+		"react": {
 			"optional": true
 		},
 		"vite": {
@@ -100,7 +115,11 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.2",
 		"@types/node": "catalog:",
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
 		"next": "catalog:",
+		"react": "catalog:",
+		"react-dom": "catalog:",
 		"tsup": "^8.5.1",
 		"typescript": "catalog:",
 		"vite": "catalog:",

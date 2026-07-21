@@ -32,7 +32,9 @@ export function ConfigSnippet({ option }: { option: SnippetBlock }) {
 	const code =
 		file === "next"
 			? `import { withEnvStyles } from 'env.style'\n\nexport default withEnvStyles(nextConfig, {\n${option.source("  ")}\n})`
-			: `import { envStyle } from 'env.style/vite'\n\nexport default defineConfig({\n  plugins: [\n    react(),\n    envStyle({\n${option.source("      ")}\n    }),\n  ],\n})`;
+			: file === "vite"
+				? `import { envStyle } from 'env.style/vite'\n\nexport default defineConfig({\n  plugins: [\n    react(),\n    envStyle({\n${option.source("      ")}\n    }),\n  ],\n})`
+				: `import { envStyle } from 'env.style/waku'\nimport { defineConfig } from 'waku/config'\n\nexport default defineConfig({\n  vite: {\n    plugins: [\n      envStyle({\n${option.source("        ")}\n      }),\n    ],\n  },\n})`;
 
 	return (
 		<div className="flex flex-col gap-2">
@@ -51,7 +53,7 @@ export function ConfigSnippet({ option }: { option: SnippetBlock }) {
 						{option.jsx("  ")}
 						{"\n})"}
 					</>
-				) : (
+				) : file === "vite" ? (
 					<>
 						{dim("import { ")}envStyle{dim(" } from 'env.style/vite'")}
 						{"\n\n"}
@@ -61,6 +63,16 @@ export function ConfigSnippet({ option }: { option: SnippetBlock }) {
 						{"    "}envStyle({"{\n"}
 						{option.jsx("      ")}
 						{"\n    }"}){dim(",\n  ],\n})")}
+					</>
+				) : (
+					<>
+						{dim("import { ")}envStyle{dim(" } from 'env.style/waku'")}
+						{"\n"}
+						{dim("import { defineConfig } from 'waku/config'\n\n")}
+						{dim("export default defineConfig({\n  vite: {\n    plugins: [\n")}
+						{"      "}envStyle({"{\n"}
+						{option.jsx("        ")}
+						{"\n      }"}){dim(",\n    ],\n  },\n})")}
 					</>
 				)}
 			</CodeBlock>

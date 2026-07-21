@@ -4,10 +4,10 @@
 // routes-manifest.json); production builds must leave zero footprint.
 //
 // The full provider matrix runs against vite-react (~2s per build). nextjs
-// and tanstack-start get one styled + one production pair each, since provider
-// detection is shared code; only the plugin wiring differs per framework.
+// tanstack-start, and waku get one styled + one production pair each, since
+// provider detection is shared code; only the plugin wiring differs per framework.
 // Builds inside one example dir share .next/dist, so each app runs its
-// scenarios sequentially; the three app chains run in parallel.
+// scenarios sequentially; the four app chains run in parallel.
 import assert from "node:assert";
 import { spawn } from "node:child_process";
 import {
@@ -206,6 +206,29 @@ const APPS: Record<
 				path.join(dir, ".output", "public", OUT_DIR),
 				s.styled,
 				label,
+			);
+		},
+	},
+	waku: {
+		build: ["pnpm", "exec", "waku", "build"],
+		scenarios: [
+			{
+				provider: "cloudflare preview",
+				env: { CLOUDFLARE_ENV: "preview" },
+				styled: true,
+			},
+			{ provider: "no platform (default)", env: {}, styled: false },
+		],
+		verify(dir, s, label) {
+			assertIcons(path.join(dir, "dist", "public", OUT_DIR), s.styled, label);
+			const html = readFileSync(
+				path.join(dir, "dist", "public", "index.html"),
+				"utf8",
+			);
+			assert.equal(
+				html.includes(TINTED_ICON_URL),
+				s.styled,
+				`${label}: root-layout icon link ${s.styled ? "missing" : "present"}`,
 			);
 		},
 	},

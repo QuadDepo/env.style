@@ -40,6 +40,7 @@ const DEFAULT_CUSTOM_ICONS: Record<string, IconValue | null> = {
 export const CONFIG_FILES = {
 	next: "next.config.ts",
 	vite: "vite.config.ts",
+	waku: "waku.config.ts",
 } as const;
 export type ConfigFile = keyof typeof CONFIG_FILES;
 

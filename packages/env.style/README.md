@@ -1,6 +1,6 @@
 # env.style
 
-Environment-tinted favicons for Next.js and Vite. See at a glance whether a tab is dev, preview, staging, or production.
+Environment-tinted favicons for Next.js, Vite, and Waku. See at a glance whether a tab is dev, preview, staging, or production.
 
 ## Install
 
@@ -33,6 +33,51 @@ export default defineConfig({
 })
 ```
 
+## Waku
+
+Waku exposes Vite plugins through the `vite` field in `waku.config.ts`:
+
+```ts
+// waku.config.ts
+import { envStyle } from 'env.style/waku'
+import { defineConfig } from 'waku/config'
+
+export default defineConfig({
+  vite: {
+    plugins: [envStyle()],
+  },
+})
+```
+
+Add `EnvStyle` to the root layout. Waku hoists the generated `<link>` elements into
+the document head:
+
+```tsx
+// src/pages/_layout.tsx
+import { EnvStyle } from 'env.style/waku'
+import type { ReactNode } from 'react'
+
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode
+}) {
+  return (
+    <>
+      <EnvStyle />
+      {children}
+    </>
+  )
+}
+
+export const getConfig = async () => ({ render: 'static' } as const)
+```
+
+The component is required because Waku creates its document metadata from React
+layouts instead of a project `index.html`. It automatically renders nothing for
+production and omits the Apple touch icon when `pwa: false` is configured on the
+plugin.
+
 ## Default colors
 
 | environment   | color              |
@@ -56,8 +101,15 @@ the tinted favicon. Works with both plain object and function-form configs.
 
 ### `envStyle(options?): Plugin`
 
-**Vite only.** Returns a Vite plugin that tints the favicon and rewrites
-`<link rel="icon">` tags in `index.html`.
+**Vite and Waku.** Returns a Vite plugin that tints the favicon. In regular Vite
+apps it also rewrites `<link rel="icon">` tags in `index.html`; Waku uses the
+`EnvStyle` component instead.
+
+### `EnvStyle(): ReactElement | null`
+
+**Waku only.** Renders the active environment's favicon and Apple touch icon links
+for Waku to hoist into the document head. Import it from `env.style/waku` and place
+it in `src/pages/_layout.tsx`.
 
 ### `EnvStylesOptions`
 
@@ -109,6 +161,7 @@ normal tinting.
 5. Framework default:
    - **Next.js:** `NODE_ENV === 'development' ? 'development' : 'production'`
    - **Vite:** `command === 'serve' ? 'development' : 'production'`
+   - **Waku:** uses the Vite command (`waku dev` is development, `waku build` is production)
 
 ## How it works
 
@@ -121,6 +174,9 @@ normal tinting.
 - **Vite:** rewrites `<link rel="icon">` tags in `index.html` to point at the tinted icon
   (injecting one if none exists) and serves it with `no-store` from dev-server
   middleware.
+- **Waku:** generates the same assets through Waku's Vite configuration. `EnvStyle`
+  emits matching links from the root layout, and Waku copies the generated assets to
+  `dist/public` for production builds.
 
 ## Known limits
 

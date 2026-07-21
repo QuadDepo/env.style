@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/header/transparent.svg?title=env.style&subtitle=Environment-tinted+favicons+for+Next.js+and+Vite&align=left&border=false&font=geist-mono&mode=dark" />
-  <img alt="env.style — Environment-tinted favicons for Next.js and Vite" src="https://shieldcn.dev/header/transparent.svg?title=env.style&subtitle=Environment-tinted+favicons+for+Next.js+and+Vite&align=left&border=false&font=geist-mono&mode=light" />
+  <source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/header/transparent.svg?title=env.style&subtitle=Environment-tinted+favicons+for+Next.js%2C+Vite%2C+and+Waku&align=left&border=false&font=geist-mono&mode=dark" />
+  <img alt="env.style — Environment-tinted favicons for Next.js, Vite, and Waku" src="https://shieldcn.dev/header/transparent.svg?title=env.style&subtitle=Environment-tinted+favicons+for+Next.js%2C+Vite%2C+and+Waku&align=left&border=false&font=geist-mono&mode=light" />
 </picture>
 
 <p align="center">
@@ -39,6 +39,27 @@ export default withEnvStyles(nextConfig)
 import { defineConfig } from 'vite'
 import { envStyle } from 'env.style/vite'
 export default defineConfig({ plugins: [envStyle()] })
+```
+
+### Waku
+
+```ts
+// waku.config.ts
+import { envStyle } from 'env.style/waku'
+import { defineConfig } from 'waku/config'
+
+export default defineConfig({
+  vite: { plugins: [envStyle()] },
+})
+```
+
+```tsx
+// src/pages/_layout.tsx
+import { EnvStyle } from 'env.style/waku'
+
+export default async function RootLayout({ children }) {
+  return <><EnvStyle />{children}</>
+}
 ```
 
 See the package [README](./packages/env.style/README.md) for full API docs, options, and
